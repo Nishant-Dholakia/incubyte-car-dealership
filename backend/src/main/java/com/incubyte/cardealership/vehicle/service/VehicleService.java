@@ -152,6 +152,9 @@ public class VehicleService {
     }
 
     public void deleteVehicle(Long id) {
-        throw new UnsupportedOperationException();
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new VehicleNotFoundException(id));
+
+        vehicleRepository.delete(vehicle);
     }
 }
