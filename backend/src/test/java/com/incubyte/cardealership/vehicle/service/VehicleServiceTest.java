@@ -1,6 +1,7 @@
 package com.incubyte.cardealership.vehicle.service;
 
 import com.incubyte.cardealership.exception.VehicleNotFoundException;
+import com.incubyte.cardealership.vehicle.dto.RestockRequest;
 import com.incubyte.cardealership.vehicle.dto.VehicleRequest;
 import com.incubyte.cardealership.vehicle.dto.VehicleResponse;
 import com.incubyte.cardealership.vehicle.dto.VehicleSearchRequest;
@@ -359,6 +360,51 @@ class VehicleServiceTest {
         assertThrows(
                 IllegalStateException.class,
                 () -> vehicleService.purchaseVehicle(1L)
+        );
+
+        verify(vehicleRepository).findById(1L);
+        verify(vehicleRepository, never()).save(any());
+    }
+
+    // RESTOCK VEHICLE
+
+    @Test
+    void shouldRestockVehicleSuccessfully() {
+        Vehicle vehicle = Vehicle.builder()
+                .id(1L)
+                .make("Toyota")
+                .model("Camry")
+                .category("Sedan")
+                .price(BigDecimal.valueOf(25000))
+                .quantity(5)
+                .build();
+
+        RestockRequest request = new RestockRequest(3);
+
+        when(vehicleRepository.findById(1L))
+                .thenReturn(Optional.of(vehicle));
+
+        when(vehicleRepository.save(any(Vehicle.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        VehicleResponse response = vehicleService.restockVehicle(1L, request);
+
+        assertEquals(8, response.quantity());
+
+        verify(vehicleRepository).findById(1L);
+        verify(vehicleRepository).save(vehicle);
+    }
+
+    @Test
+    void shouldThrowWhenRestockingNonExistingVehicle() {
+        RestockRequest request = new RestockRequest(3);
+
+        when(vehicleRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                VehicleNotFoundException.class,
+                () -> vehicleService.restockVehicle(1L, request)
         );
 
         verify(vehicleRepository).findById(1L);

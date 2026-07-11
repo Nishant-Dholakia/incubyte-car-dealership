@@ -1,6 +1,7 @@
 package com.incubyte.cardealership.vehicle.service;
 
 import com.incubyte.cardealership.exception.VehicleNotFoundException;
+import com.incubyte.cardealership.vehicle.dto.RestockRequest;
 import com.incubyte.cardealership.vehicle.dto.VehicleRequest;
 import com.incubyte.cardealership.vehicle.dto.VehicleResponse;
 import com.incubyte.cardealership.vehicle.dto.VehicleSearchRequest;
@@ -11,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
+
 
 @Service
 @RequiredArgsConstructor
@@ -127,5 +130,10 @@ public class VehicleService {
                 updatedVehicle.getPrice(),
                 updatedVehicle.getQuantity()
         );
+    }
+
+
+    public VehicleResponse restockVehicle(long l, RestockRequest request) {
+        return null;
     }
 }
