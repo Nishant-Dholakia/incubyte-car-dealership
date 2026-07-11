@@ -1,6 +1,7 @@
 package com.incubyte.cardealership.auth.entity;
 
 
+import com.incubyte.cardealership.auth.enums.Role;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -35,6 +36,10 @@ public class User implements UserDetails {
     @Size(min = 8, message = "Password must be at least 8 characters")
     @Column(nullable = false)
     private String password;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
 
     @Override
     public String getUsername() {

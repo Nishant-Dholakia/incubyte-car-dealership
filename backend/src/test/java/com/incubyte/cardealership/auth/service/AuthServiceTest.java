@@ -1,7 +1,9 @@
 package com.incubyte.cardealership.auth.service;
 
 import com.incubyte.cardealership.auth.dto.LoginResponse;
+import com.incubyte.cardealership.auth.dto.RegisterRequest;
 import com.incubyte.cardealership.auth.entity.User;
+import com.incubyte.cardealership.auth.enums.Role;
 import com.incubyte.cardealership.auth.repository.UserRepository;
 import com.incubyte.cardealership.security.JwtService;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -292,5 +295,23 @@ class AuthServiceTest {
         verify(jwtService, never()).generateToken(any());
     }
 
+
+    @Test
+    void shouldAssignUserRoleOnRegistration() {
+        RegisterRequest request = new RegisterRequest(
+                "john@example.com",
+                "password"
+        );
+
+        when(passwordEncoder.encode(anyString())).thenReturn("encoded-password");
+
+        authService.register(request.email(), request.password());
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+
+        verify(userRepository).save(captor.capture());
+
+        assertEquals(Role.USER, captor.getValue().getRole());
+    }
 
 }
