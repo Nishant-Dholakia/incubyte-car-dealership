@@ -2,6 +2,7 @@ package com.incubyte.cardealership.auth.service;
 
 import com.incubyte.cardealership.auth.entity.User;
 import com.incubyte.cardealership.auth.repository.UserRepository;
+import com.incubyte.cardealership.security.JwtService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -27,6 +28,9 @@ class AuthServiceTest {
 
     @InjectMocks
     private AuthService authService;
+
+    @Mock
+    private JwtService jwtService;
 
 
     // REGISTRATION TESTS
@@ -158,11 +162,13 @@ class AuthServiceTest {
     //  LOGIN TESTS
 
     @Test
-    void shouldLoginSuccessfully() {
+    void shouldReturnJwtTokenAfterSuccessfulLogin() {
+
         // Arrange
         String email = "john@example.com";
         String rawPassword = "password123";
         String encodedPassword = "encoded-password";
+        String jwt = "jwt-token";
 
         User user = User.builder()
                 .email(email)
@@ -175,14 +181,16 @@ class AuthServiceTest {
         when(passwordEncoder.matches(rawPassword, encodedPassword))
                 .thenReturn(true);
 
+        when(jwtService.generateToken(user))
+                .thenReturn(jwt);
+
         // Act
         User loggedInUser = authService.login(email, rawPassword);
 
         // Assert
         assertThat(loggedInUser).isEqualTo(user);
 
-        verify(userRepository).findByEmail(email);
-        verify(passwordEncoder).matches(rawPassword, encodedPassword);
+        verify(jwtService).generateToken(user);
     }
 
     @Test
@@ -198,13 +206,17 @@ class AuthServiceTest {
                 .hasMessage("Invalid email or password");
 
         verify(passwordEncoder, never()).matches(any(), any());
+        verify(jwtService, never()).generateToken(any());
     }
 
     @Test
-    void shouldThrowExceptionWhenPasswordIsIncorrect() {
+    void shouldGenerateJwtAfterSuccessfulLogin() {
+
+        // Arrange
         String email = "john@example.com";
         String rawPassword = "password123";
         String encodedPassword = "encoded-password";
+        String jwt = "jwt-token";
 
         User user = User.builder()
                 .email(email)
@@ -215,11 +227,18 @@ class AuthServiceTest {
                 .thenReturn(Optional.of(user));
 
         when(passwordEncoder.matches(rawPassword, encodedPassword))
-                .thenReturn(false);
+                .thenReturn(true);
 
-        assertThatThrownBy(() -> authService.login(email, rawPassword))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Invalid email or password");
+        when(jwtService.generateToken(user))
+                .thenReturn(jwt);
+
+        // Act
+        User loggedInUser = authService.login(email, rawPassword);
+
+        // Assert
+        assertThat(loggedInUser).isEqualTo(user);
+
+        verify(jwtService).generateToken(user);
     }
 
     @Test
@@ -229,6 +248,7 @@ class AuthServiceTest {
                 .hasMessage("Email is required");
 
         verify(userRepository, never()).findByEmail(any());
+        verify(jwtService, never()).generateToken(any());
     }
 
     @Test
@@ -238,6 +258,7 @@ class AuthServiceTest {
                 .hasMessage("Email is required");
 
         verify(userRepository, never()).findByEmail(any());
+        verify(jwtService, never()).generateToken(any());
     }
 
     @Test
@@ -247,6 +268,7 @@ class AuthServiceTest {
                 .hasMessage("Invalid email format");
 
         verify(userRepository, never()).findByEmail(any());
+        verify(jwtService, never()).generateToken(any());
     }
 
     @Test
@@ -256,6 +278,7 @@ class AuthServiceTest {
                 .hasMessage("Password is required");
 
         verify(userRepository, never()).findByEmail(any());
+        verify(jwtService, never()).generateToken(any());
     }
 
     @Test
@@ -265,6 +288,7 @@ class AuthServiceTest {
                 .hasMessage("Password is required");
 
         verify(userRepository, never()).findByEmail(any());
+        verify(jwtService, never()).generateToken(any());
     }
 
 

@@ -2,8 +2,8 @@ package com.incubyte.cardealership.auth.service;
 
 import com.incubyte.cardealership.auth.entity.User;
 import com.incubyte.cardealership.auth.repository.UserRepository;
+import com.incubyte.cardealership.security.JwtService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +13,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     public User register(String email, String password) {
 
