@@ -15,6 +15,10 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
 
     public void register(String email, String password) {
+
+        if(userRepository.existsByEmail(email)){
+            throw new IllegalArgumentException("Email already exists");
+        }
         String encodedPassword = passwordEncoder.encode(password);
 
         User user = new User();
