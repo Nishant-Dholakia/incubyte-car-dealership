@@ -2,6 +2,7 @@ package com.incubyte.cardealership.vehicle.service;
 
 import com.incubyte.cardealership.vehicle.dto.VehicleRequest;
 import com.incubyte.cardealership.vehicle.dto.VehicleResponse;
+import com.incubyte.cardealership.vehicle.dto.VehicleSearchRequest;
 import com.incubyte.cardealership.vehicle.entity.Vehicle;
 import com.incubyte.cardealership.vehicle.repository.VehicleRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -245,5 +246,55 @@ class VehicleServiceTest {
         assertTrue(response.isEmpty());
 
         verify(vehicleRepository).findAll();
+    }
+
+
+    // VEHICLE SEARCH
+    @Test
+    void shouldReturnSearchResults() {
+        VehicleSearchRequest request = new VehicleSearchRequest(
+                "Toyota",
+                null,
+                null,
+                null,
+                null
+        );
+
+        Vehicle vehicle = Vehicle.builder()
+                .id(1L)
+                .make("Toyota")
+                .model("Camry")
+                .category("Sedan")
+                .price(BigDecimal.valueOf(25000))
+                .quantity(5)
+                .build();
+
+        when(vehicleRepository.searchVehicles(
+                request.make(),
+                request.model(),
+                request.category(),
+                request.minPrice(),
+                request.maxPrice()
+        )).thenReturn(List.of(vehicle));
+
+        List<VehicleResponse> response = vehicleService.searchVehicles(request);
+
+        assertEquals(1, response.size());
+
+        VehicleResponse vehicleResponse = response.getFirst();
+
+        assertEquals("Toyota", vehicleResponse.make());
+        assertEquals("Camry", vehicleResponse.model());
+        assertEquals("Sedan", vehicleResponse.category());
+        assertEquals(BigDecimal.valueOf(25000), vehicleResponse.price());
+        assertEquals(5, vehicleResponse.quantity());
+
+        verify(vehicleRepository).searchVehicles(
+                request.make(),
+                request.model(),
+                request.category(),
+                request.minPrice(),
+                request.maxPrice()
+        );
     }
 }

@@ -2,6 +2,7 @@ package com.incubyte.cardealership.vehicle.service;
 
 import com.incubyte.cardealership.vehicle.dto.VehicleRequest;
 import com.incubyte.cardealership.vehicle.dto.VehicleResponse;
+import com.incubyte.cardealership.vehicle.dto.VehicleSearchRequest;
 import com.incubyte.cardealership.vehicle.entity.Vehicle;
 import com.incubyte.cardealership.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
@@ -79,5 +80,9 @@ public class VehicleService {
                         vehicle.getQuantity()
                 ))
                 .toList();
+    }
+
+    public List<VehicleResponse> searchVehicles(VehicleSearchRequest vehicleSearchRequest) {
+        return List.of();
     }
 }
