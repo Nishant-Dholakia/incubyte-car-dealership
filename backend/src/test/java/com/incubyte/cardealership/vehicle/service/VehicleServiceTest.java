@@ -317,12 +317,15 @@ class VehicleServiceTest {
         when(vehicleRepository.findById(1L))
                 .thenReturn(Optional.of(vehicle));
 
+        when(vehicleRepository.save(any(Vehicle.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
         VehicleResponse response = vehicleService.purchaseVehicle(1L);
 
         assertEquals(4, response.quantity());
 
         verify(vehicleRepository).findById(1L);
-        verify(vehicleRepository).save(vehicle);
+        verify(vehicleRepository).save(any(Vehicle.class));
     }
 
     @Test

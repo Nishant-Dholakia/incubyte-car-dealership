@@ -1,5 +1,6 @@
 package com.incubyte.cardealership.vehicle.service;
 
+import com.incubyte.cardealership.exception.VehicleNotFoundException;
 import com.incubyte.cardealership.vehicle.dto.VehicleRequest;
 import com.incubyte.cardealership.vehicle.dto.VehicleResponse;
 import com.incubyte.cardealership.vehicle.dto.VehicleSearchRequest;
@@ -107,6 +108,24 @@ public class VehicleService {
     }
 
     public VehicleResponse purchaseVehicle(Long id) {
-        throw new UnsupportedOperationException();
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new VehicleNotFoundException(id));
+
+        if (vehicle.getQuantity().equals(0)) {
+            throw new IllegalStateException("Vehicle is out of stock");
+        }
+
+        vehicle.setQuantity(vehicle.getQuantity() - 1);
+
+        Vehicle updatedVehicle = vehicleRepository.save(vehicle);
+
+        return new VehicleResponse(
+                updatedVehicle.getId(),
+                updatedVehicle.getMake(),
+                updatedVehicle.getModel(),
+                updatedVehicle.getCategory(),
+                updatedVehicle.getPrice(),
+                updatedVehicle.getQuantity()
+        );
     }
 }

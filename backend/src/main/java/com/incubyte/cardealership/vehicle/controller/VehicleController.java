@@ -6,6 +6,7 @@ import com.incubyte.cardealership.vehicle.dto.VehicleSearchRequest;
 import com.incubyte.cardealership.vehicle.service.VehicleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,5 +32,11 @@ public class VehicleController {
     @GetMapping("/search")
     public List<VehicleResponse> searchVehicles(VehicleSearchRequest request) {
         return vehicleService.searchVehicles(request);
+    }
+
+    @PostMapping("/{id}/purchase")
+    public ResponseEntity<VehicleResponse> purchaseVehicle(@PathVariable Long id) {
+        VehicleResponse response = vehicleService.purchaseVehicle(id);
+        return ResponseEntity.ok(response);
     }
 }
