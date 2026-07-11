@@ -157,4 +157,8 @@ public class VehicleService {
 
         vehicleRepository.delete(vehicle);
     }
+
+    public VehicleResponse updateVehicle(Long id, VehicleRequest request) {
+        throw new UnsupportedOperationException();
+    }
 }

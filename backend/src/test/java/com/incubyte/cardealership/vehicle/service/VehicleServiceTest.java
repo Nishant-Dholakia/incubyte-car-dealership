@@ -447,4 +447,122 @@ class VehicleServiceTest {
         verify(vehicleRepository).findById(1L);
         verify(vehicleRepository, never()).delete(any());
     }
+
+    // UPDATE VEHICLE
+
+    @Test
+    void shouldUpdateVehicleSuccessfully() {
+        Vehicle existingVehicle = Vehicle.builder()
+                .id(1L)
+                .make("Toyota")
+                .model("Camry")
+                .category("Sedan")
+                .price(BigDecimal.valueOf(25000))
+                .quantity(5)
+                .build();
+
+        VehicleRequest request = new VehicleRequest(
+                "Honda",
+                "City",
+                "Sedan",
+                BigDecimal.valueOf(22000),
+                10
+        );
+
+        when(vehicleRepository.findById(1L))
+                .thenReturn(Optional.of(existingVehicle));
+
+        when(vehicleRepository.save(any(Vehicle.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        VehicleResponse response = vehicleService.updateVehicle(1L, request);
+
+        assertEquals("Honda", response.make());
+        assertEquals("City", response.model());
+        assertEquals("Sedan", response.category());
+        assertEquals(BigDecimal.valueOf(22000), response.price());
+        assertEquals(10, response.quantity());
+
+        verify(vehicleRepository).findById(1L);
+        verify(vehicleRepository).save(existingVehicle);
+    }
+
+    @Test
+    void shouldThrowWhenUpdatingNonExistingVehicle() {
+        VehicleRequest request = new VehicleRequest(
+                "Honda",
+                "City",
+                "Sedan",
+                BigDecimal.valueOf(22000),
+                10
+        );
+
+        when(vehicleRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                VehicleNotFoundException.class,
+                () -> vehicleService.updateVehicle(1L, request)
+        );
+
+        verify(vehicleRepository).findById(1L);
+        verify(vehicleRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldThrowWhenUpdatingVehicleWithNegativeQuantity() {
+        Vehicle vehicle = createVehicle();
+
+        VehicleRequest request = new VehicleRequest(
+                "Honda",
+                "City",
+                "Sedan",
+                BigDecimal.valueOf(22000),
+                -1
+        );
+
+        when(vehicleRepository.findById(1L))
+                .thenReturn(Optional.of(vehicle));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> vehicleService.updateVehicle(1L, request)
+        );
+
+        verify(vehicleRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldThrowWhenUpdatingVehicleWithBlankMake() {
+        Vehicle vehicle = createVehicle();
+
+        VehicleRequest request = new VehicleRequest(
+                "",
+                "City",
+                "Sedan",
+                BigDecimal.valueOf(22000),
+                5
+        );
+
+        when(vehicleRepository.findById(1L))
+                .thenReturn(Optional.of(vehicle));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> vehicleService.updateVehicle(1L, request)
+        );
+
+        verify(vehicleRepository, never()).save(any());
+    }
+
+    private Vehicle createVehicle() {
+        return Vehicle.builder()
+                .id(1L)
+                .make("Toyota")
+                .model("Camry")
+                .category("Sedan")
+                .price(BigDecimal.valueOf(25000))
+                .quantity(5)
+                .build();
+    }
 }
