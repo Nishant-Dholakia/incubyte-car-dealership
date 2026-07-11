@@ -113,6 +113,42 @@ class AuthServiceTest {
                 .isEqualTo("john@example.com");
     }
 
+    @Test
+    void shouldThrowExceptionWhenPasswordIsBlank() {
+        String email = "john@example.com";
+
+        assertThatThrownBy(() -> authService.register(email, ""))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Password is required");
+
+        verify(passwordEncoder, never()).encode(any());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenPasswordIsNull() {
+        String email = "john@example.com";
+
+        assertThatThrownBy(() -> authService.register(email, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Password is required");
+
+        verify(passwordEncoder, never()).encode(any());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenPasswordIsTooShort() {
+        String email = "john@example.com";
+
+        assertThatThrownBy(() -> authService.register(email, "1234567"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Password must be at least 8 characters");
+
+        verify(passwordEncoder, never()).encode(any());
+        verify(userRepository, never()).save(any());
+    }
+
     
 
 }
