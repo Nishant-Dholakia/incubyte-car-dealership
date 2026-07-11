@@ -16,14 +16,25 @@ public class AuthService {
 
     public void register(String email, String password) {
 
-        if(userRepository.existsByEmail(email)){
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Email is required");
+        }
+
+        email = email.trim();
+
+        if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+            throw new IllegalArgumentException("Invalid email format");
+        }
+
+        if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("Email already exists");
         }
         String encodedPassword = passwordEncoder.encode(password);
 
-        User user = new User();
-        user.setEmail(email);
-        user.setPassword(encodedPassword);
+        User user = User.builder()
+                .email(email)
+                .password(encodedPassword)
+                .build();
 
         userRepository.save(user);
     }
