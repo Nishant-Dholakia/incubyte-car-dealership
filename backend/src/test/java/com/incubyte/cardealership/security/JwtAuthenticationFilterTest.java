@@ -1,6 +1,5 @@
 package com.incubyte.cardealership.security;
 
-import com.incubyte.cardealership.auth.entity.User;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -138,7 +137,7 @@ class JwtAuthenticationFilterTest {
         when(userDetailsService.loadUserByUsername(username))
                 .thenReturn(userDetails);
 
-        when(jwtService.isTokenValid(token, (User) userDetails))
+        when(jwtService.isTokenValid(token, userDetails))
                 .thenReturn(false);
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
