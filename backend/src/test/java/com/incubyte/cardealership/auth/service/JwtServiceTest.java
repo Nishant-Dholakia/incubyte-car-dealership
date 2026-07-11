@@ -1,9 +1,14 @@
 package com.incubyte.cardealership.auth.service;
 
 import com.incubyte.cardealership.auth.entity.User;
+import com.incubyte.cardealership.security.JwtProperties;
 import com.incubyte.cardealership.security.JwtService;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.Base64;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -11,12 +16,17 @@ class JwtServiceTest {
 
     private JwtService jwtService;
 
+    private static final String TEST_SECRET =
+            Base64.getEncoder().encodeToString(
+                    Keys.secretKeyFor(SignatureAlgorithm.HS256).getEncoded()
+            );
+
     @BeforeEach
     void setUp() {
-        jwtService = new JwtService(
-                "12345678901234567890123456789012", // 32+ chars
-                3600000L
-        );
+        JwtProperties properties =
+                new JwtProperties(TEST_SECRET, 3600000L);
+
+        jwtService = new JwtService(properties);
     }
 
     @Test
