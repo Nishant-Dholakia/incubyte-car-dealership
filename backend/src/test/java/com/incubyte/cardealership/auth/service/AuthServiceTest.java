@@ -10,8 +10,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -48,4 +48,20 @@ class AuthServiceTest {
         assertThat(savedUser.getEmail()).isEqualTo(email);
         assertThat(savedUser.getPassword()).isEqualTo(encodedPassword);
     }
+
+    @Test
+    void shouldThrowExceptionWhenEmailAlreadyExists() {
+        String email = "existing@example.com";
+        String password = "password123";
+
+        when(userRepository.existsByEmail(email)).thenReturn(true);
+
+        assertThatThrownBy(() -> authService.register(email, password))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Email already exists");
+
+        verify(userRepository, never()).save(any());
+        verify(passwordEncoder, never()).encode(any());
+    }
+
 }
