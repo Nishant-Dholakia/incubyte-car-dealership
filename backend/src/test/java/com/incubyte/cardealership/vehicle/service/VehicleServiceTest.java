@@ -1,5 +1,6 @@
 package com.incubyte.cardealership.vehicle.service;
 
+import com.incubyte.cardealership.exception.VehicleNotFoundException;
 import com.incubyte.cardealership.vehicle.dto.VehicleRequest;
 import com.incubyte.cardealership.vehicle.dto.VehicleResponse;
 import com.incubyte.cardealership.vehicle.dto.VehicleSearchRequest;
@@ -15,10 +16,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class VehicleServiceTest {
@@ -296,5 +298,67 @@ class VehicleServiceTest {
                 request.minPrice(),
                 request.maxPrice()
         );
+    }
+
+
+    // VEHICLE PURCHASE
+
+    @Test
+    void shouldPurchaseVehicleSuccessfully() {
+        Vehicle vehicle = Vehicle.builder()
+                .id(1L)
+                .make("Toyota")
+                .model("Camry")
+                .category("Sedan")
+                .price(BigDecimal.valueOf(25000))
+                .quantity(5)
+                .build();
+
+        when(vehicleRepository.findById(1L))
+                .thenReturn(Optional.of(vehicle));
+
+        VehicleResponse response = vehicleService.purchaseVehicle(1L);
+
+        assertEquals(4, response.quantity());
+
+        verify(vehicleRepository).findById(1L);
+        verify(vehicleRepository).save(vehicle);
+    }
+
+    @Test
+    void shouldThrowWhenVehicleDoesNotExist() {
+        when(vehicleRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                VehicleNotFoundException.class,
+                () -> vehicleService.purchaseVehicle(1L)
+        );
+
+        verify(vehicleRepository).findById(1L);
+        verify(vehicleRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldThrowWhenVehicleIsOutOfStock() {
+        Vehicle vehicle = Vehicle.builder()
+                .id(1L)
+                .make("Toyota")
+                .model("Camry")
+                .category("Sedan")
+                .price(BigDecimal.valueOf(25000))
+                .quantity(0)
+                .build();
+
+        when(vehicleRepository.findById(1L))
+                .thenReturn(Optional.of(vehicle));
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> vehicleService.purchaseVehicle(1L)
+        );
+
+        verify(vehicleRepository).findById(1L);
+        verify(vehicleRepository, never()).save(any());
     }
 }

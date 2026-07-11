@@ -105,4 +105,8 @@ public class VehicleService {
                 vehicle.getQuantity()
         );
     }
+
+    public VehicleResponse purchaseVehicle(Long id) {
+        throw new UnsupportedOperationException();
+    }
 }
