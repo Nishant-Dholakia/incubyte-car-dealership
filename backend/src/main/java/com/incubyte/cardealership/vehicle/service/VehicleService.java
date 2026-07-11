@@ -68,7 +68,16 @@ public class VehicleService {
     }
 
     public List<VehicleResponse> getAllVehicles() {
-
-        return List.of();
+        return vehicleRepository.findAll()
+                .stream()
+                .map(vehicle -> new VehicleResponse(
+                        vehicle.getId(),
+                        vehicle.getMake(),
+                        vehicle.getModel(),
+                        vehicle.getCategory(),
+                        vehicle.getPrice(),
+                        vehicle.getQuantity()
+                ))
+                .toList();
     }
 }
