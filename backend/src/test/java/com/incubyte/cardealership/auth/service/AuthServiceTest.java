@@ -1,5 +1,6 @@
 package com.incubyte.cardealership.auth.service;
 
+import com.incubyte.cardealership.auth.dto.LoginResponse;
 import com.incubyte.cardealership.auth.entity.User;
 import com.incubyte.cardealership.auth.repository.UserRepository;
 import com.incubyte.cardealership.security.JwtService;
@@ -185,10 +186,10 @@ class AuthServiceTest {
                 .thenReturn(jwt);
 
         // Act
-        User loggedInUser = authService.login(email, rawPassword);
+        LoginResponse response = authService.login(email, rawPassword);
 
         // Assert
-        assertThat(loggedInUser).isEqualTo(user);
+        assertThat(response.token()).isEqualTo(jwt);
 
         verify(jwtService).generateToken(user);
     }
@@ -233,10 +234,10 @@ class AuthServiceTest {
                 .thenReturn(jwt);
 
         // Act
-        User loggedInUser = authService.login(email, rawPassword);
+        LoginResponse response = authService.login(email, rawPassword);
 
         // Assert
-        assertThat(loggedInUser).isEqualTo(user);
+        assertThat(response.token()).isEqualTo(jwt);
 
         verify(jwtService).generateToken(user);
     }

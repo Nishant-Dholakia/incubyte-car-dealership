@@ -1,5 +1,6 @@
 package com.incubyte.cardealership.auth.service;
 
+import com.incubyte.cardealership.auth.dto.LoginResponse;
 import com.incubyte.cardealership.auth.entity.User;
 import com.incubyte.cardealership.auth.repository.UserRepository;
 import com.incubyte.cardealership.security.JwtService;
@@ -32,7 +33,7 @@ public class AuthService {
         return userRepository.save(user);
     }
 
-    public User login(String email, String password) {
+    public LoginResponse login(String email, String password) {
 
         email = validateAndNormalizeEmail(email);
         validateLoginPassword(password);
@@ -45,9 +46,8 @@ public class AuthService {
             throw new IllegalArgumentException("Invalid email or password");
         }
 
-        jwtService.generateToken(user);
-
-        return user;
+        String token = jwtService.generateToken(user);
+        return new LoginResponse(token);
     }
 
     private void validateRegistrationPassword(String password) {
