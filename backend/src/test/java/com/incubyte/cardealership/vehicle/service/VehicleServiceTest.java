@@ -1,6 +1,7 @@
 package com.incubyte.cardealership.vehicle.service;
 
 import com.incubyte.cardealership.vehicle.dto.VehicleRequest;
+import com.incubyte.cardealership.vehicle.dto.VehicleResponse;
 import com.incubyte.cardealership.vehicle.entity.Vehicle;
 import com.incubyte.cardealership.vehicle.repository.VehicleRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,10 +13,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class VehicleServiceTest {
@@ -193,5 +195,55 @@ class VehicleServiceTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> vehicleService.addVehicle(request));
+    }
+
+
+    void shouldReturnAllVehicles() {
+        Vehicle vehicle1 = Vehicle.builder()
+                .id(1L)
+                .make("Toyota")
+                .model("Camry")
+                .category("Sedan")
+                .price(BigDecimal.valueOf(25000))
+                .quantity(5)
+                .build();
+
+        Vehicle vehicle2 = Vehicle.builder()
+                .id(2L)
+                .make("BMW")
+                .model("X5")
+                .category("SUV")
+                .price(BigDecimal.valueOf(60000))
+                .quantity(2)
+                .build();
+
+        when(vehicleRepository.findAll())
+                .thenReturn(List.of(vehicle1, vehicle2));
+
+        List<VehicleResponse> response = vehicleService.getAllVehicles();
+
+        assertEquals(2, response.size());
+
+        VehicleResponse first = response.getFirst();
+
+        assertEquals(1L, first.id());
+        assertEquals("Toyota", first.make());
+        assertEquals("Camry", first.model());
+        assertEquals("Sedan", first.category());
+        assertEquals(BigDecimal.valueOf(25000), first.price());
+        assertEquals(5, first.quantity());
+
+        verify(vehicleRepository).findAll();
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenNoVehiclesExist() {
+        when(vehicleRepository.findAll()).thenReturn(List.of());
+
+        List<VehicleResponse> response = vehicleService.getAllVehicles();
+
+        assertTrue(response.isEmpty());
+
+        verify(vehicleRepository).findAll();
     }
 }

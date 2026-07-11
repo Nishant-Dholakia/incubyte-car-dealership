@@ -1,12 +1,14 @@
 package com.incubyte.cardealership.vehicle.service;
 
 import com.incubyte.cardealership.vehicle.dto.VehicleRequest;
+import com.incubyte.cardealership.vehicle.dto.VehicleResponse;
 import com.incubyte.cardealership.vehicle.entity.Vehicle;
 import com.incubyte.cardealership.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -14,7 +16,7 @@ public class VehicleService {
 
     private final VehicleRepository vehicleRepository;
 
-    public void addVehicle(VehicleRequest request) {
+    public VehicleResponse addVehicle(VehicleRequest request) {
         validate(request);
 
         Vehicle vehicle = Vehicle.builder()
@@ -26,6 +28,15 @@ public class VehicleService {
                 .build();
 
         vehicleRepository.save(vehicle);
+
+        return new VehicleResponse(
+                vehicle.getId(),
+                vehicle.getMake(),
+                vehicle.getModel(),
+                vehicle.getCategory(),
+                vehicle.getPrice(),
+                vehicle.getQuantity()
+        );
     }
 
     private void validate(VehicleRequest request) {
@@ -54,5 +65,10 @@ public class VehicleService {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(field + " is required");
         }
+    }
+
+    public List<VehicleResponse> getAllVehicles() {
+
+        return List.of();
     }
 }
