@@ -2,6 +2,7 @@ package com.incubyte.cardealership.vehicle.controller;
 
 import com.incubyte.cardealership.vehicle.dto.VehicleRequest;
 import com.incubyte.cardealership.vehicle.dto.VehicleResponse;
+import com.incubyte.cardealership.vehicle.dto.VehicleSearchRequest;
 import com.incubyte.cardealership.vehicle.service.VehicleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,5 +26,10 @@ public class VehicleController {
     @GetMapping
     public List<VehicleResponse> getAllVehicles() {
         return vehicleService.getAllVehicles();
+    }
+
+    @GetMapping("/search")
+    public List<VehicleResponse> searchVehicles(VehicleSearchRequest request) {
+        return vehicleService.searchVehicles(request);
     }
 }

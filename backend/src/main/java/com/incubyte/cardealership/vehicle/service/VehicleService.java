@@ -82,7 +82,27 @@ public class VehicleService {
                 .toList();
     }
 
-    public List<VehicleResponse> searchVehicles(VehicleSearchRequest vehicleSearchRequest) {
-        return List.of();
+    public List<VehicleResponse> searchVehicles(VehicleSearchRequest request) {
+        return vehicleRepository.searchVehicles(
+                        request.make(),
+                        request.model(),
+                        request.category(),
+                        request.minPrice(),
+                        request.maxPrice()
+                )
+                .stream()
+                .map(this::toVehicleResponse)
+                .toList();
+    }
+
+    private VehicleResponse toVehicleResponse(Vehicle vehicle) {
+        return new VehicleResponse(
+                vehicle.getId(),
+                vehicle.getMake(),
+                vehicle.getModel(),
+                vehicle.getCategory(),
+                vehicle.getPrice(),
+                vehicle.getQuantity()
+        );
     }
 }
