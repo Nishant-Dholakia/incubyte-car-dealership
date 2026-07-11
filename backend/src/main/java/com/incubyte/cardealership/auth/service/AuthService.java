@@ -14,55 +14,27 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public void register(String email, String password) {
+    public User register(String email, String password) {
 
-        if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("Email is required");
-        }
-
-        email = email.trim();
-
-        if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
-            throw new IllegalArgumentException("Invalid email format");
-        }
+        email = validateAndNormalizeEmail(email);
+        validateRegistrationPassword(password);
 
         if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("Email already exists");
         }
 
-        if (password == null || password.isBlank()) {
-            throw new IllegalArgumentException("Password is required");
-        }
-
-        if (password.length() < 8) {
-            throw new IllegalArgumentException("Password must be at least 8 characters");
-        }
-
-        String encodedPassword = passwordEncoder.encode(password);
-
         User user = User.builder()
                 .email(email)
-                .password(encodedPassword)
+                .password(passwordEncoder.encode(password))
                 .build();
 
-        userRepository.save(user);
+        return userRepository.save(user);
     }
 
     public User login(String email, String password) {
 
-        if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("Email is required");
-        }
-
-        email = email.trim();
-
-        if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
-            throw new IllegalArgumentException("Invalid email format");
-        }
-
-        if (password == null || password.isBlank()) {
-            throw new IllegalArgumentException("Password is required");
-        }
+        email = validateAndNormalizeEmail(email);
+        validateLoginPassword(password);
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() ->
@@ -73,5 +45,35 @@ public class AuthService {
         }
 
         return user;
+    }
+
+    private void validateRegistrationPassword(String password) {
+        if (password == null || password.isBlank()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+
+        if (password.length() < 8) {
+            throw new IllegalArgumentException("Password must be at least 8 characters");
+        }
+    }
+
+    private void validateLoginPassword(String password) {
+        if (password == null || password.isBlank()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+    }
+
+    private String validateAndNormalizeEmail(String email) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Email is required");
+        }
+
+        email = email.trim();
+
+        if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+            throw new IllegalArgumentException("Invalid email format");
+        }
+
+        return email;
     }
 }
