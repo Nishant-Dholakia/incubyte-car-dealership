@@ -1,5 +1,6 @@
 package com.incubyte.cardealership.vehicle.controller;
 
+import com.incubyte.cardealership.vehicle.dto.RestockRequest;
 import com.incubyte.cardealership.vehicle.dto.VehicleRequest;
 import com.incubyte.cardealership.vehicle.dto.VehicleResponse;
 import com.incubyte.cardealership.vehicle.dto.VehicleSearchRequest;
@@ -38,5 +39,15 @@ public class VehicleController {
     public ResponseEntity<VehicleResponse> purchaseVehicle(@PathVariable Long id) {
         VehicleResponse response = vehicleService.purchaseVehicle(id);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{id}/restock")
+    public ResponseEntity<VehicleResponse> restockVehicle(
+            @PathVariable Long id,
+            @RequestBody RestockRequest request
+    ) {
+        return ResponseEntity.ok(
+                vehicleService.restockVehicle(id, request)
+        );
     }
 }

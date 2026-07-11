@@ -133,7 +133,25 @@ public class VehicleService {
     }
 
 
-    public VehicleResponse restockVehicle(long l, RestockRequest request) {
-        return null;
+    public VehicleResponse restockVehicle(Long id, RestockRequest request) {
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new VehicleNotFoundException(id));
+
+        vehicle.setQuantity(vehicle.getQuantity() + request.quantity());
+
+        Vehicle updatedVehicle = vehicleRepository.save(vehicle);
+
+        return new VehicleResponse(
+                updatedVehicle.getId(),
+                updatedVehicle.getMake(),
+                updatedVehicle.getModel(),
+                updatedVehicle.getCategory(),
+                updatedVehicle.getPrice(),
+                updatedVehicle.getQuantity()
+        );
+    }
+
+    public void deleteVehicle(Long id) {
+        throw new UnsupportedOperationException();
     }
 }

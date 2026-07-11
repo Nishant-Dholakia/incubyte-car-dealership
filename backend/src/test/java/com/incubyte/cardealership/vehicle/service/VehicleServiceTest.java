@@ -410,4 +410,41 @@ class VehicleServiceTest {
         verify(vehicleRepository).findById(1L);
         verify(vehicleRepository, never()).save(any());
     }
+
+
+    // DELETE VEHICLE
+
+    @Test
+    void shouldDeleteVehicleSuccessfully() {
+        Vehicle vehicle = Vehicle.builder()
+                .id(1L)
+                .make("Toyota")
+                .model("Camry")
+                .category("Sedan")
+                .price(BigDecimal.valueOf(25000))
+                .quantity(5)
+                .build();
+
+        when(vehicleRepository.findById(1L))
+                .thenReturn(Optional.of(vehicle));
+
+        vehicleService.deleteVehicle(1L);
+
+        verify(vehicleRepository).findById(1L);
+        verify(vehicleRepository).delete(vehicle);
+    }
+
+    @Test
+    void shouldThrowWhenDeletingNonExistingVehicle() {
+        when(vehicleRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                VehicleNotFoundException.class,
+                () -> vehicleService.deleteVehicle(1L)
+        );
+
+        verify(vehicleRepository).findById(1L);
+        verify(vehicleRepository, never()).delete(any());
+    }
 }
