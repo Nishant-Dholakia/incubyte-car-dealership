@@ -47,4 +47,8 @@ public class AuthService {
 
         userRepository.save(user);
     }
+
+    public User login(String email, String password) {
+        throw new UnsupportedOperationException();
+    }
 }

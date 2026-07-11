@@ -9,6 +9,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.*;
@@ -24,6 +27,9 @@ class AuthServiceTest {
 
     @InjectMocks
     private AuthService authService;
+
+
+    // REGISTRATION TESTS
 
     @Test
     void shouldRegisterUserSuccessfully() {
@@ -149,6 +155,117 @@ class AuthServiceTest {
         verify(userRepository, never()).save(any());
     }
 
-    
+    //  LOGIN TESTS
+
+    @Test
+    void shouldLoginSuccessfully() {
+        // Arrange
+        String email = "john@example.com";
+        String rawPassword = "password123";
+        String encodedPassword = "encoded-password";
+
+        User user = User.builder()
+                .email(email)
+                .password(encodedPassword)
+                .build();
+
+        when(userRepository.findByEmail(email))
+                .thenReturn(Optional.of(user));
+
+        when(passwordEncoder.matches(rawPassword, encodedPassword))
+                .thenReturn(true);
+
+        // Act
+        User loggedInUser = authService.login(email, rawPassword);
+
+        // Assert
+        assertThat(loggedInUser).isEqualTo(user);
+
+        verify(userRepository).findByEmail(email);
+        verify(passwordEncoder).matches(rawPassword, encodedPassword);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUserDoesNotExist() {
+        String email = "john@example.com";
+        String password = "password123";
+
+        when(userRepository.findByEmail(email))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.login(email, password))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Invalid email or password");
+
+        verify(passwordEncoder, never()).matches(any(), any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenPasswordIsIncorrect() {
+        String email = "john@example.com";
+        String rawPassword = "password123";
+        String encodedPassword = "encoded-password";
+
+        User user = User.builder()
+                .email(email)
+                .password(encodedPassword)
+                .build();
+
+        when(userRepository.findByEmail(email))
+                .thenReturn(Optional.of(user));
+
+        when(passwordEncoder.matches(rawPassword, encodedPassword))
+                .thenReturn(false);
+
+        assertThatThrownBy(() -> authService.login(email, rawPassword))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Invalid email or password");
+    }
+
+    @Test
+    void shouldThrowExceptionWhenLoginEmailIsBlank() {
+        assertThatThrownBy(() -> authService.login("", "password123"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Email is required");
+
+        verify(userRepository, never()).findByEmail(any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenLoginEmailIsNull() {
+        assertThatThrownBy(() -> authService.login(null, "password123"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Email is required");
+
+        verify(userRepository, never()).findByEmail(any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenLoginEmailIsInvalid() {
+        assertThatThrownBy(() -> authService.login("invalid-email", "password123"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Invalid email format");
+
+        verify(userRepository, never()).findByEmail(any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenLoginPasswordIsBlank() {
+        assertThatThrownBy(() -> authService.login("john@example.com", ""))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Password is required");
+
+        verify(userRepository, never()).findByEmail(any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenLoginPasswordIsNull() {
+        assertThatThrownBy(() -> authService.login("john@example.com", null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Password is required");
+
+        verify(userRepository, never()).findByEmail(any());
+    }
+
 
 }
