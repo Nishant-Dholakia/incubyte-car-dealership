@@ -64,4 +64,55 @@ class AuthServiceTest {
         verify(passwordEncoder, never()).encode(any());
     }
 
+    @Test
+    void shouldThrowExceptionWhenEmailIsBlank() {
+        assertThatThrownBy(() -> authService.register("", "password123"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Email is required");
+
+        verify(passwordEncoder, never()).encode(any());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenEmailIsNull() {
+        assertThatThrownBy(() -> authService.register(null, "password123"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Email is required");
+
+        verify(passwordEncoder, never()).encode(any());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenEmailIsInvalid() {
+        assertThatThrownBy(() -> authService.register("invalid-email", "password123"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Invalid email format");
+
+        verify(passwordEncoder, never()).encode(any());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldTrimEmailBeforeSaving() {
+        String email = "  john@example.com  ";
+        String password = "password123";
+        String encodedPassword = "encoded-password";
+
+        when(userRepository.existsByEmail("john@example.com")).thenReturn(false);
+        when(passwordEncoder.encode(password)).thenReturn(encodedPassword);
+
+        authService.register(email, password);
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+
+        verify(userRepository).save(captor.capture());
+
+        assertThat(captor.getValue().getEmail())
+                .isEqualTo("john@example.com");
+    }
+
+    
+
 }
