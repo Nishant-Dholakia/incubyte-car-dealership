@@ -159,6 +159,48 @@ public class VehicleService {
     }
 
     public VehicleResponse updateVehicle(Long id, VehicleRequest request) {
-        throw new UnsupportedOperationException();
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new VehicleNotFoundException(id));
+
+        validateVehicleRequest(request);
+
+        vehicle.setMake(request.make());
+        vehicle.setModel(request.model());
+        vehicle.setCategory(request.category());
+        vehicle.setPrice(request.price());
+        vehicle.setQuantity(request.quantity());
+
+        Vehicle updatedVehicle = vehicleRepository.save(vehicle);
+
+        return new VehicleResponse(
+                updatedVehicle.getId(),
+                updatedVehicle.getMake(),
+                updatedVehicle.getModel(),
+                updatedVehicle.getCategory(),
+                updatedVehicle.getPrice(),
+                updatedVehicle.getQuantity()
+        );
+    }
+
+    private void validateVehicleRequest(VehicleRequest request) {
+        if (request.make() == null || request.make().isBlank()) {
+            throw new IllegalArgumentException("Make cannot be blank");
+        }
+
+        if (request.model() == null || request.model().isBlank()) {
+            throw new IllegalArgumentException("Model cannot be blank");
+        }
+
+        if (request.category() == null || request.category().isBlank()) {
+            throw new IllegalArgumentException("Category cannot be blank");
+        }
+
+        if (request.price() == null || request.price().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Price must be non-negative");
+        }
+
+        if (request.quantity() == null || request.quantity() < 0) {
+            throw new IllegalArgumentException("Quantity must be non-negative");
+        }
     }
 }
