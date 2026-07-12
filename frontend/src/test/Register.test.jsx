@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import Register from "./Register";
+import Register from "../page/auth/register";
 import "@testing-library/jest-dom";
 
 describe("Register Component", () => {
@@ -17,7 +17,7 @@ describe("Register Component", () => {
 
   it("renders all input fields", () => {
     render(<Register {...defaultProps} />);
-    
+
     expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
