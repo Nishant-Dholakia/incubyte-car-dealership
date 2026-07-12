@@ -40,7 +40,9 @@ export default function Register({ onSubmit }) {
     const [isLoading, setIsLoading] = useState(false);
     const [apiError, setApiError] = useState("");
     const inRouter = useInRouterContext();
-    const navigate = useNavigate();
+    
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const navigate = inRouter ? useNavigate() : null;
 
     const handleChange = (e) => {
         setForm((prev) => ({
@@ -72,7 +74,9 @@ export default function Register({ onSubmit }) {
                     password: form.password,
                 });
                 toast.success("Registration successful");
-                navigate("/login");
+                if (navigate) {
+                    navigate("/login");
+                }
             } catch (err) {
                 const message = err.response?.data?.message || err.message || "Something went wrong";
                 setApiError(message);

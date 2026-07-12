@@ -86,8 +86,8 @@ describe("Inventory Component", () => {
 
     it("displays quantity", () => {
       renderInventory();
-      expect(screen.getByText(/5/)).toBeInTheDocument();
-      expect(screen.getByText(/0/)).toBeInTheDocument();
+      expect(screen.getByText("5")).toBeInTheDocument();
+      expect(screen.getByText("0")).toBeInTheDocument();
     });
   });
 

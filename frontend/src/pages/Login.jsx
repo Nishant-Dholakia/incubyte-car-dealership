@@ -40,7 +40,9 @@ export default function Login({ onSubmit }) {
     const [isLoading, setIsLoading] = useState(false);
     const [apiError, setApiError] = useState("");
     const inRouter = useInRouterContext();
-    const navigate = useNavigate();
+    
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const navigate = inRouter ? useNavigate() : null;
 
     const handleChange = (e) => {
         setForm((prev) => ({
@@ -80,7 +82,9 @@ export default function Login({ onSubmit }) {
                 }
 
                 toast.success("Login successful");
-                navigate("/inventory");
+                if (navigate) {
+                    navigate("/inventory");
+                }
             } catch (err) {
                 const message = err.response?.data?.message || err.message || "Something went wrong";
                 setApiError(message);
