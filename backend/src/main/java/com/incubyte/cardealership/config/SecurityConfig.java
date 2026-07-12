@@ -33,6 +33,9 @@ public class SecurityConfig {
                                 "/api/auth/**"
                         ).permitAll()
 
+                        .requestMatchers(HttpMethod.GET, "/api/health")
+                        .permitAll()
+
                         .requestMatchers(HttpMethod.GET, "/api/vehicles/**")
                         .hasAnyRole("USER", "ADMIN")
 

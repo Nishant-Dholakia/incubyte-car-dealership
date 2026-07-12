@@ -124,9 +124,6 @@ class JwtAuthenticationFilterTest {
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
-
         assertThat(SecurityContextHolder.getContext().getAuthentication())
                 .isNull();
 
