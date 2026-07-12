@@ -2,6 +2,7 @@ package com.incubyte.cardealership.auth.service;
 
 import com.incubyte.cardealership.auth.dto.LoginResponse;
 import com.incubyte.cardealership.auth.entity.User;
+import com.incubyte.cardealership.auth.enums.Role;
 import com.incubyte.cardealership.auth.repository.UserRepository;
 import com.incubyte.cardealership.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -24,10 +25,11 @@ public class AuthService {
         if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("Email already exists");
         }
-
+        System.out.println(passwordEncoder.encode(password));
         User user = User.builder()
                 .email(email)
                 .password(passwordEncoder.encode(password))
+                .role(Role.USER)
                 .build();
 
         return userRepository.save(user);
