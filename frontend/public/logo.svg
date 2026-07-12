@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- A -->
+  <path
+    d="M16 112L44 16H68L96 112H74L66 86H46L38 112Z
+       M51 68H61L56 46Z"
+    fill="#2E6B4F"/>
+
+  <!-- E -->
+  <path
+    d="M74 16H112V30H88V50H108V64H88V98H112V112H74Z"
+    fill="#B8903B"/>
+</svg>
