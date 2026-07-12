@@ -1,7 +1,10 @@
 package com.incubyte.cardealership.config;
 
+import com.incubyte.cardealership.auth.entity.User;
+import com.incubyte.cardealership.auth.enums.Role;
 import com.incubyte.cardealership.auth.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -42,5 +45,20 @@ public class ApplicationConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    CommandLineRunner seedAdmin(UserRepository userRepository,
+                                PasswordEncoder passwordEncoder) {
+        return args -> {
+            if (userRepository.findByEmail("admin@dealer.com").isEmpty()) {
+                User admin = new User();
+                admin.setEmail("admin@dealer.com");
+                admin.setPassword(passwordEncoder.encode("admin123"));
+                admin.setRole(Role.ADMIN);
+
+                userRepository.save(admin);
+            }
+        };
     }
 }

@@ -16,3 +16,7 @@ server:
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION}
+
+admin:
+  email: ${ADMIN_EMAIL:admin@dealer.com}
+  password: ${ADMIN_PASSWORD:admin123}
