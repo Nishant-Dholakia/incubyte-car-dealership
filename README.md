@@ -181,8 +181,7 @@ Response
 
 ```json
 {
-  "token": "<jwt-token>",
-  "role": "USER"
+  "token": "<jwt-token>"
 }
 ```
 
@@ -454,7 +453,7 @@ Backend
 
 Frontend
 
-- Vercel / Netlify
+- Vercel
 
 ---
 
