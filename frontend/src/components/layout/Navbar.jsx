@@ -1,20 +1,23 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/lib/toast";
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
-  const navItems = [
-    { label: "Home", to: "/" },
-    { label: "Inventory", to: "/inventory" },
-  ];
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
 
-  const authItems = [
-    { label: "Login", to: "/login" },
-    { label: "Register", to: "/register" },
-  ];
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    toast.success("Logout successful");
+    setIsMobileMenuOpen(false);
+    navigate("/login");
+  };
 
   const linkClass = ({ isActive }) =>
     `text-sm font-medium transition-colors hover:text-primary py-2 ${
@@ -41,23 +44,43 @@ export default function Navbar() {
 
         {/* Desktop Navigation Links */}
         <nav className="hidden md:flex items-center gap-8">
-          {navItems.map((item) => (
-            <NavLink key={item.to} to={item.to} className={linkClass}>
-              {item.label}
+          <NavLink to="/" className={linkClass}>
+            Home
+          </NavLink>
+          {token && (
+            <NavLink to="/inventory" className={linkClass}>
+              Inventory
             </NavLink>
-          ))}
+          )}
+          {token && role === "ADMIN" && (
+            <NavLink to="/admin" className={linkClass}>
+              Admin
+            </NavLink>
+          )}
         </nav>
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-4">
-          <NavLink to="/login" className={linkClass}>
-            Login
-          </NavLink>
-          <NavLink to="/register">
-            <Button variant="default" className="text-sm font-medium bg-primary hover:bg-primary/95 text-white px-5 rounded-xl shadow-lg shadow-primary/10">
-              Register
+          {token ? (
+            <Button 
+              variant="ghost" 
+              onClick={handleLogout}
+              className="text-sm font-medium text-muted-foreground/80 hover:text-primary"
+            >
+              Logout
             </Button>
-          </NavLink>
+          ) : (
+            <>
+              <NavLink to="/login" className={linkClass}>
+                Login
+              </NavLink>
+              <NavLink to="/register">
+                <Button variant="default" className="text-sm font-medium bg-primary hover:bg-primary/95 text-white px-5 rounded-xl shadow-lg shadow-primary/10">
+                  Register
+                </Button>
+              </NavLink>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -76,17 +99,61 @@ export default function Navbar() {
       {/* Mobile Navigation Drawer */}
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-20 left-0 w-full bg-background border-b border-border shadow-xl py-6 px-6 animate-in fade-in slide-in-from-top-4 duration-200">
-          <nav className="flex flex-col gap-4 mb-6">
-            {navItems.concat(authItems).map((item) => (
+          <nav className="flex flex-col gap-4">
+            <NavLink 
+              to="/" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={mobileLinkClass}
+            >
+              Home
+            </NavLink>
+            
+            {token && (
               <NavLink 
-                key={item.to} 
-                to={item.to} 
+                to="/inventory" 
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={mobileLinkClass}
               >
-                {item.label}
+                Inventory
               </NavLink>
-            ))}
+            )}
+
+            {token && role === "ADMIN" && (
+              <NavLink 
+                to="/admin" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={mobileLinkClass}
+              >
+                Admin
+              </NavLink>
+            )}
+
+            {token ? (
+              <Button 
+                variant="ghost" 
+                onClick={handleLogout}
+                className="w-full text-left justify-start px-0 text-base font-semibold text-primary hover:text-accent"
+              >
+                Logout
+              </Button>
+            ) : (
+              <>
+                <NavLink 
+                  to="/login" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={mobileLinkClass}
+                >
+                  Login
+                </NavLink>
+                <NavLink 
+                  to="/register" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={mobileLinkClass}
+                >
+                  Register
+                </NavLink>
+              </>
+            )}
           </nav>
         </div>
       )}
