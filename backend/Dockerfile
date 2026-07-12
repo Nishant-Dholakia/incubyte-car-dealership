@@ -21,6 +21,7 @@ WORKDIR /app
 
 # Create directories for SQLite database
 RUN mkdir -p /data
+ENV DATABASE_PATH=/data/dealership.db
 
 COPY --from=builder /app/target/*.jar app.jar
 
