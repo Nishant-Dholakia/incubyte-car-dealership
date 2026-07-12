@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -7,8 +7,18 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
+import { getAllVehicles, searchVehicles, purchaseVehicle } from "@/services/vehicleService";
+import PurchaseDialog from "@/components/ui/PurchaseDialog";
+import { toast } from "@/lib/toast";
 
-export default function Inventory({ vehicles = [], onSearch, onPurchase }) {
+export default function Inventory({ vehicles, onSearch, onPurchase }) {
+  const [vehiclesList, setVehiclesList] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false);
+
   const [filters, setFilters] = useState({
     make: "",
     model: "",
@@ -17,6 +27,30 @@ export default function Inventory({ vehicles = [], onSearch, onPurchase }) {
     maxPrice: "",
   });
 
+  const isPropDriven = vehicles !== undefined;
+
+  const fetchAll = async () => {
+    setIsLoading(true);
+    setError("");
+    try {
+      const data = await getAllVehicles();
+      setVehiclesList(data);
+    } catch (err) {
+      const message = err.response?.data?.message || err.message || "Failed to load vehicles";
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isPropDriven) {
+      fetchAll();
+    } else {
+      setVehiclesList(vehicles || []);
+    }
+  }, [vehicles, isPropDriven]);
+
   const handleChange = (e) => {
     setFilters((prev) => ({
       ...prev,
@@ -24,9 +58,49 @@ export default function Inventory({ vehicles = [], onSearch, onPurchase }) {
     }));
   };
 
-  const handleSearchSubmit = (e) => {
+  const handleSearchSubmit = async (e) => {
     e.preventDefault();
-    onSearch?.(filters);
+    if (isPropDriven) {
+      onSearch?.(filters);
+    } else {
+      setIsLoading(true);
+      setError("");
+      try {
+        const data = await searchVehicles(filters);
+        setVehiclesList(data);
+      } catch (err) {
+        const message = err.response?.data?.message || err.message || "Search failed";
+        setError(message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const handlePurchaseClick = (vehicle) => {
+    if (isPropDriven) {
+      onPurchase?.(vehicle.id);
+    } else {
+      setSelectedVehicle(vehicle);
+      setIsPurchaseDialogOpen(true);
+    }
+  };
+
+  const handleConfirmPurchase = async (vehicleId) => {
+    setIsPurchaseDialogOpen(false);
+    setIsLoading(true);
+    setError("");
+    try {
+      await purchaseVehicle(vehicleId);
+      toast.success("Purchase successful");
+      await fetchAll();
+    } catch (err) {
+      const message = err.response?.data?.message || err.message || "Purchase failed";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -129,8 +203,17 @@ export default function Inventory({ vehicles = [], onSearch, onPurchase }) {
           </form>
         </Card>
 
-        {/* Empty State vs Vehicle Grid */}
-        {vehicles.length === 0 ? (
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm font-medium text-center">
+            {error}
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="w-10 h-10 border-4 border-[#285943] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : vehiclesList.length === 0 ? (
           <div className="w-full py-16 text-center bg-white border border-[#E9E4DA] rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
             <p className="text-lg font-medium text-[#5B6A60]">
               No vehicles found
@@ -138,7 +221,7 @@ export default function Inventory({ vehicles = [], onSearch, onPurchase }) {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {vehicles.map((vehicle) => (
+            {vehiclesList.map((vehicle) => (
               <Card 
                 key={vehicle.id} 
                 className="bg-white border border-[#E9E4DA] rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col justify-between"
@@ -176,7 +259,7 @@ export default function Inventory({ vehicles = [], onSearch, onPurchase }) {
 
                 <CardFooter className="p-6 pt-0">
                   <Button
-                    onClick={() => onPurchase?.(vehicle.id)}
+                    onClick={() => handlePurchaseClick(vehicle)}
                     disabled={vehicle.quantity === 0}
                     className="w-full h-11 bg-[#285943] hover:bg-[#285943]/90 text-white font-semibold rounded-xl transition-all duration-200 disabled:opacity-50"
                   >
@@ -189,6 +272,13 @@ export default function Inventory({ vehicles = [], onSearch, onPurchase }) {
         )}
 
       </div>
+
+      <PurchaseDialog
+        isOpen={isPurchaseDialogOpen}
+        vehicle={selectedVehicle}
+        onConfirm={handleConfirmPurchase}
+        onCancel={() => setIsPurchaseDialogOpen(false)}
+      />
     </main>
   );
 }
