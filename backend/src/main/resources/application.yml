@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:sqlite:${DATABASE_PATH:data/dealership.db}
+    url: jdbc:sqlite:${DATABASE_PATH:/data/dealership.db}
     driver-class-name: org.sqlite.JDBC
 
   jpa:
