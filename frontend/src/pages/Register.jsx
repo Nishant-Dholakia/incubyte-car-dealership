@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useInRouterContext } from "react-router-dom";
+import { Link, useInRouterContext, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,6 +9,8 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
+import { register } from "@/services/authService";
+import { toast } from "@/lib/toast";
 
 export function validateForm(form) {
     const errors = {};
@@ -35,7 +37,10 @@ export default function Register({ onSubmit }) {
         password: "",
     });
     const [errors, setErrors] = useState({});
+    const [isLoading, setIsLoading] = useState(false);
+    const [apiError, setApiError] = useState("");
     const inRouter = useInRouterContext();
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         setForm((prev) => ({
@@ -44,11 +49,12 @@ export default function Register({ onSubmit }) {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         
         // Clear previous errors before validating
         setErrors({});
+        setApiError("");
 
         const newErrors = validateForm(form);
         setErrors(newErrors);
@@ -58,6 +64,22 @@ export default function Register({ onSubmit }) {
                 email: form.email,
                 password: form.password,
             });
+
+            setIsLoading(true);
+            try {
+                await register({
+                    email: form.email,
+                    password: form.password,
+                });
+                toast.success("Registration successful");
+                navigate("/login");
+            } catch (err) {
+                const message = err.response?.data?.message || err.message || "Something went wrong";
+                setApiError(message);
+                toast.error(message);
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 
@@ -75,6 +97,12 @@ export default function Register({ onSubmit }) {
                 
                 <CardContent className="p-0">
                     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+                        {apiError && (
+                            <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-medium text-center">
+                                {apiError}
+                            </div>
+                        )}
+                        
                         <div className="flex flex-col gap-1.5">
                             <label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-[#5B6A60] select-none">
                                 Email
@@ -86,6 +114,7 @@ export default function Register({ onSubmit }) {
                                 placeholder="name@example.com"
                                 value={form.email}
                                 onChange={handleChange}
+                                disabled={isLoading}
                                 className="h-11 px-4 rounded-xl border-[#E9E4DA] bg-white text-[#1D2D24] focus-visible:border-[#285943] focus-visible:ring-[#285943]/20 placeholder:text-[#5B6A60]/50"
                             />
                             {errors.email && (
@@ -106,6 +135,7 @@ export default function Register({ onSubmit }) {
                                 placeholder="••••••••"
                                 value={form.password}
                                 onChange={handleChange}
+                                disabled={isLoading}
                                 className="h-11 px-4 rounded-xl border-[#E9E4DA] bg-white text-[#1D2D24] focus-visible:border-[#285943] focus-visible:ring-[#285943]/20 placeholder:text-[#5B6A60]/50"
                             />
                             {errors.password && (
@@ -117,9 +147,10 @@ export default function Register({ onSubmit }) {
 
                         <Button 
                             type="submit" 
-                            className="w-full h-11 bg-[#285943] hover:bg-[#285943]/90 text-white font-semibold rounded-xl tracking-wide transition-all duration-200 shadow-md shadow-[#285943]/10 mt-2"
+                            disabled={isLoading}
+                            className="w-full h-11 bg-[#285943] hover:bg-[#285943]/90 text-white font-semibold rounded-xl tracking-wide transition-all duration-200 shadow-md shadow-[#285943]/10 mt-2 disabled:opacity-50"
                         >
-                            Register
+                            {isLoading ? "Registering..." : "Register"}
                         </Button>
                     </form>
                 </CardContent>

@@ -10,10 +10,14 @@ export default function AppRoutes() {
     console.log("Register form submitted:", data);
   };
 
+  const handleLoginSubmit = (data) => {
+    console.log("Login form submitted:", data);
+  };
+
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={<Login onSubmit={handleLoginSubmit} />} />
       <Route path="/register" element={<Register onSubmit={handleRegisterSubmit} />} />
       <Route path="/inventory" element={<Inventory />} />
       <Route path="/admin" element={<Admin />} />

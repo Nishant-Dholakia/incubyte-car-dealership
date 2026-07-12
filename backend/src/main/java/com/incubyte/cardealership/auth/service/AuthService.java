@@ -25,7 +25,7 @@ public class AuthService {
         if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("Email already exists");
         }
-        System.out.println(passwordEncoder.encode(password));
+//        System.out.println(passwordEncoder.encode(password));
         User user = User.builder()
                 .email(email)
                 .password(passwordEncoder.encode(password))
