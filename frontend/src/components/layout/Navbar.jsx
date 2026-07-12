@@ -40,6 +40,11 @@ export default function Navbar() {
           <span className="text-xl font-bold tracking-tight text-primary uppercase">
             Auto<span className="text-accent font-extrabold">Elite</span>
           </span>
+          {token && role === "ADMIN" && (
+            <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#285943] text-white tracking-wider uppercase shadow-sm">
+              ADMIN
+            </span>
+          )}
         </NavLink>
 
         {/* Desktop Navigation Links */}
@@ -62,13 +67,20 @@ export default function Navbar() {
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-4">
           {token ? (
-            <Button 
-              variant="ghost" 
-              onClick={handleLogout}
-              className="text-sm font-medium text-muted-foreground/80 hover:text-primary"
-            >
-              Logout
-            </Button>
+            <>
+              {token && role === "ADMIN" && (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#285943] text-white tracking-widest uppercase shadow-sm">
+                  ADMIN
+                </span>
+              )}
+              <Button 
+                variant="ghost" 
+                onClick={handleLogout}
+                className="text-sm font-medium text-muted-foreground/80 hover:text-primary"
+              >
+                Logout
+              </Button>
+            </>
           ) : (
             <>
               <NavLink to="/login" className={linkClass}>
@@ -129,13 +141,22 @@ export default function Navbar() {
             )}
 
             {token ? (
-              <Button 
-                variant="ghost" 
-                onClick={handleLogout}
-                className="w-full text-left justify-start px-0 text-base font-semibold text-primary hover:text-accent"
-              >
-                Logout
-              </Button>
+              <div className="flex flex-col gap-2 pt-2 border-t border-border">
+                {role === "ADMIN" && (
+                  <div className="flex justify-start">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#285943] text-white tracking-widest uppercase shadow-sm">
+                      ADMIN
+                    </span>
+                  </div>
+                )}
+                <Button 
+                  variant="ghost" 
+                  onClick={handleLogout}
+                  className="w-full text-left justify-start px-0 text-base font-semibold text-primary hover:text-accent"
+                >
+                  Logout
+                </Button>
+              </div>
             ) : (
               <>
                 <NavLink 

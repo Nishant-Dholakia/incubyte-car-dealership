@@ -76,10 +76,19 @@ export default function Login({ onSubmit }) {
                 
                 if (data.token) {
                     localStorage.setItem("token", data.token);
+                    
+                    let role = data.role;
+                    if (!role) {
+                        try {
+                            const payload = JSON.parse(atob(data.token.split('.')[1]));
+                            role = payload.sub === "admin@admin.com" ? "ADMIN" : "USER";
+                        } catch (e) {
+                            role = "USER";
+                        }
+                    }
+                    localStorage.setItem("role", role);
                 }
-                if (data.role) {
-                    localStorage.setItem("role", data.role);
-                }
+
 
                 toast.success("Login successful");
                 if (navigate) {

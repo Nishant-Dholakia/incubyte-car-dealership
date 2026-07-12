@@ -26,3 +26,23 @@ export async function purchaseVehicle(id) {
   const response = await api.post(`/vehicles/${id}/purchase`);
   return response.data;
 }
+
+export async function addVehicle(data) {
+  const response = await api.post("/vehicles", data);
+  return response.data;
+}
+
+export async function updateVehicle(id, data) {
+  const response = await api.put(`/vehicles/${id}`, data);
+  return response.data;
+}
+
+export async function deleteVehicle(id) {
+  const response = await api.delete(`/vehicles/${id}`);
+  return response.data;
+}
+
+export async function restockVehicle(id, quantity) {
+  const response = await api.post(`/vehicles/${id}/restock`, { quantity });
+  return response.data;
+}
