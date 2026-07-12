@@ -81,7 +81,7 @@ export default function Login({ onSubmit }) {
                     if (!role) {
                         try {
                             const payload = JSON.parse(atob(data.token.split('.')[1]));
-                            role = payload.sub === "admin@admin.com" ? "ADMIN" : "USER";
+                            role = payload.role || (payload.sub === "admin@admin.com" ? "ADMIN" : "USER");
                         } catch (e) {
                             role = "USER";
                         }

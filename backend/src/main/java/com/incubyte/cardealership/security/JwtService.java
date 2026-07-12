@@ -23,6 +23,7 @@ public class JwtService {
     public String generateToken(User user) {
         return Jwts.builder()
                 .subject(user.getEmail())
+                .claim("role", user.getRole().name())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtProperties.expiration()))
                 .signWith(getSigningKey())
@@ -33,9 +34,17 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
+    }
+
     public boolean isTokenValid(String token, UserDetails userDetails) {
+        return isTokenValid(token, userDetails.getUsername());
+    }
+
+    public boolean isTokenValid(String token, String username) {
         try {
-            return extractUsername(token).equals(userDetails.getUsername())
+            return extractUsername(token).equals(username)
                     && !isTokenExpired(token);
         } catch (JwtException | IllegalArgumentException e) {
             return false;

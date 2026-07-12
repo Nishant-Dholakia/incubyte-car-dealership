@@ -14,8 +14,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -28,9 +26,6 @@ class JwtAuthenticationFilterTest {
 
     @Mock
     private JwtService jwtService;
-
-    @Mock
-    private UserDetailsService userDetailsService;
 
     @InjectMocks
     private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -60,7 +55,6 @@ class JwtAuthenticationFilterTest {
 
         verify(filterChain).doFilter(request, response);
         verifyNoInteractions(jwtService);
-        verifyNoInteractions(userDetailsService);
     }
 
     @Test
@@ -74,7 +68,6 @@ class JwtAuthenticationFilterTest {
 
         verify(filterChain).doFilter(request, response);
         verifyNoInteractions(jwtService);
-        verifyNoInteractions(userDetailsService);
     }
 
     @Test
@@ -83,13 +76,7 @@ class JwtAuthenticationFilterTest {
 
         String token = "jwt-token";
         String username = "john@example.com";
-
-        UserDetails userDetails =
-                org.springframework.security.core.userdetails.User
-                        .withUsername(username)
-                        .password("password")
-                        .authorities(Collections.emptyList())
-                        .build();
+        String role = "ADMIN";
 
         when(request.getHeader(HttpHeaders.AUTHORIZATION))
                 .thenReturn("Bearer " + token);
@@ -97,10 +84,10 @@ class JwtAuthenticationFilterTest {
         when(jwtService.extractUsername(token))
                 .thenReturn(username);
 
-        when(userDetailsService.loadUserByUsername(username))
-                .thenReturn(userDetails);
+        when(jwtService.extractRole(token))
+                .thenReturn(role);
 
-        when(jwtService.isTokenValid(token, userDetails))
+        when(jwtService.isTokenValid(token, username))
                 .thenReturn(true);
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -110,6 +97,11 @@ class JwtAuthenticationFilterTest {
 
         assertThat(authentication).isNotNull();
         assertThat(authentication.getName()).isEqualTo(username);
+        assertThat(authentication.getAuthorities()
+                .stream()
+                .anyMatch(authority ->
+                        authority.getAuthority().equals("ROLE_ADMIN")))
+                .isTrue();
 
         verify(filterChain).doFilter(request, response);
     }
@@ -121,24 +113,17 @@ class JwtAuthenticationFilterTest {
         String token = "jwt-token";
         String username = "john@example.com";
 
-        UserDetails userDetails =
-                org.springframework.security.core.userdetails.User
-                        .withUsername(username)
-                        .password("password")
-                        .authorities(Collections.emptyList())
-                        .build();
-
         when(request.getHeader(HttpHeaders.AUTHORIZATION))
                 .thenReturn("Bearer " + token);
 
         when(jwtService.extractUsername(token))
                 .thenReturn(username);
 
-        when(userDetailsService.loadUserByUsername(username))
-                .thenReturn(userDetails);
-
-        when(jwtService.isTokenValid(token, userDetails))
+        when(jwtService.isTokenValid(token, username))
                 .thenReturn(false);
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
@@ -165,7 +150,70 @@ class JwtAuthenticationFilterTest {
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        verify(userDetailsService, never()).loadUserByUsername(any());
+        verify(jwtService, never()).isTokenValid(any(), anyString());
+        verify(filterChain).doFilter(request, response);
+    }
+
+    @Test
+    void shouldAuthenticateUserWhenJwtIsValidAndUserRole()
+            throws ServletException, IOException {
+
+        String token = "jwt-token";
+        String username = "john@example.com";
+        String role = "USER";
+
+        when(request.getHeader(HttpHeaders.AUTHORIZATION))
+                .thenReturn("Bearer " + token);
+
+        when(jwtService.extractUsername(token))
+                .thenReturn(username);
+
+        when(jwtService.extractRole(token))
+                .thenReturn(role);
+
+        when(jwtService.isTokenValid(token, username))
+                .thenReturn(true);
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        assertThat(authentication).isNotNull();
+        assertThat(authentication.getName()).isEqualTo(username);
+        assertThat(authentication.getAuthorities()
+                .stream()
+                .anyMatch(authority ->
+                        authority.getAuthority().equals("ROLE_USER")))
+                .isTrue();
+
+        verify(filterChain).doFilter(request, response);
+    }
+
+    @Test
+    void shouldNotAuthenticateUserWhenRoleClaimIsMissing()
+            throws ServletException, IOException {
+
+        String token = "jwt-token";
+        String username = "john@example.com";
+
+        when(request.getHeader(HttpHeaders.AUTHORIZATION))
+                .thenReturn("Bearer " + token);
+
+        when(jwtService.extractUsername(token))
+                .thenReturn(username);
+
+        when(jwtService.extractRole(token))
+                .thenReturn(null);
+
+        when(jwtService.isTokenValid(token, username))
+                .thenReturn(true);
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication())
+                .isNull();
+
         verify(filterChain).doFilter(request, response);
     }
 }
