@@ -173,6 +173,26 @@ export default function Login({ onSubmit }) {
                         >
                             {isLoading ? "Logging in..." : "Login"}
                         </Button>
+
+                        <div className="flex flex-col gap-2 mt-2 p-3.5 bg-[#F8F5F0] border border-[#E9E4DA] rounded-xl text-xs">
+                            <span className="font-semibold text-[#5B6A60] uppercase tracking-wider text-[10px]">Demo Accounts (Click to Autofill):</span>
+                            <div className="flex gap-2 mt-0.5">
+                                <button
+                                    type="button"
+                                    onClick={() => setForm({ email: "admin@dealer.com", password: "admin123" })}
+                                    className="flex-1 px-3 py-2 bg-white border border-[#E9E4DA] rounded-lg text-left hover:bg-[#285943]/5 hover:border-[#285943]/30 transition-all font-semibold text-[#285943]"
+                                >
+                                    🔑 Admin
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setForm({ email: "user@demo.com", password: "user123" })}
+                                    className="flex-1 px-3 py-2 bg-white border border-[#E9E4DA] rounded-lg text-left hover:bg-[#285943]/5 hover:border-[#285943]/30 transition-all font-semibold text-[#285943]"
+                                >
+                                    👤 Customer
+                                </button>
+                            </div>
+                        </div>
                     </form>
                 </CardContent>
 

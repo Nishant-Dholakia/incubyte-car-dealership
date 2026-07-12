@@ -47,18 +47,5 @@ public class ApplicationConfig {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    CommandLineRunner seedAdmin(UserRepository userRepository,
-                                PasswordEncoder passwordEncoder) {
-        return args -> {
-            if (userRepository.findByEmail("admin@dealer.com").isEmpty()) {
-                User admin = new User();
-                admin.setEmail("admin@dealer.com");
-                admin.setPassword(passwordEncoder.encode("admin123"));
-                admin.setRole(Role.ADMIN);
 
-                userRepository.save(admin);
-            }
-        };
-    }
 }
