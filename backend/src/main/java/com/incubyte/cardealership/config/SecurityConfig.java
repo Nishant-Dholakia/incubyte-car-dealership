@@ -57,6 +57,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/vehicles/*/restock")
                         .hasRole("ADMIN")
 
+                        .requestMatchers("/api/discounts/**")
+                        .hasRole("ADMIN")
+
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider)

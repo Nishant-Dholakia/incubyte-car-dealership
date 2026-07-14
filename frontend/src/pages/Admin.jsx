@@ -16,12 +16,31 @@ import {
   deleteVehicle,
   restockVehicle,
 } from "@/services/vehicleService";
+import {
+  createDiscount,
+  getAllDiscounts,
+  deleteDiscount,
+} from "@/services/discountService";
 import { toast } from "@/lib/toast";
 
 export default function Admin({ vehicles, onAdd, onEdit, onDelete, onRestock }) {
   const [vehiclesList, setVehiclesList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Tabs State
+  const [activeTab, setActiveTab] = useState("vehicles"); // "vehicles" or "discounts"
+  const [discountsList, setDiscountsList] = useState([]);
+  const [isAddDiscountDialogOpen, setIsAddDiscountDialogOpen] = useState(false);
+  const [discountFormData, setDiscountFormData] = useState({
+    targetType: "vehicle",
+    vehicleId: "",
+    make: "",
+    discountRate: "",
+    startDate: "",
+    endDate: "",
+  });
+  const [discountFormErrors, setDiscountFormErrors] = useState({});
 
   // Dialog State
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
@@ -59,6 +78,20 @@ export default function Admin({ vehicles, onAdd, onEdit, onDelete, onRestock }) 
     }
   };
 
+  const fetchDiscounts = async () => {
+    setIsLoading(true);
+    setError("");
+    try {
+      const data = await getAllDiscounts();
+      setDiscountsList(data);
+    } catch (err) {
+      const message = err.response?.data?.message || err.message || "Failed to load discounts";
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!isPropDriven) {
       fetchAll();
@@ -66,6 +99,12 @@ export default function Admin({ vehicles, onAdd, onEdit, onDelete, onRestock }) 
       setVehiclesList(vehicles || []);
     }
   }, [vehicles, isPropDriven]);
+
+  useEffect(() => {
+    if (activeTab === "discounts") {
+      fetchDiscounts();
+    }
+  }, [activeTab]);
 
   // Handlers
   const handleAddClick = () => {
@@ -224,6 +263,87 @@ export default function Admin({ vehicles, onAdd, onEdit, onDelete, onRestock }) 
     }
   };
 
+  const handleDiscountInputChange = (e) => {
+    setDiscountFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const validateDiscountForm = () => {
+    const errors = {};
+    if (discountFormData.targetType === "vehicle" && !discountFormData.vehicleId) {
+      errors.vehicleId = "Please select a vehicle";
+    }
+    if (discountFormData.targetType === "company" && (!discountFormData.make || !discountFormData.make.trim())) {
+      errors.make = "Make/Company is required";
+    }
+    if (!discountFormData.discountRate || Number(discountFormData.discountRate) <= 0 || Number(discountFormData.discountRate) > 100) {
+      errors.discountRate = "Discount rate must be between 0.1% and 100%";
+    }
+    if (!discountFormData.startDate) {
+      errors.startDate = "Start date is required";
+    }
+    if (!discountFormData.endDate) {
+      errors.endDate = "End date is required";
+    }
+    if (discountFormData.startDate && discountFormData.endDate && new Date(discountFormData.startDate) >= new Date(discountFormData.endDate)) {
+      errors.endDate = "End date must be after start date";
+    }
+    setDiscountFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleDiscountSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateDiscountForm()) return;
+
+    setIsLoading(true);
+    setError("");
+    try {
+      const payload = {
+        discountRate: Number(discountFormData.discountRate),
+        startDate: new Date(discountFormData.startDate).toISOString().slice(0, 19),
+        endDate: new Date(discountFormData.endDate).toISOString().slice(0, 19),
+        vehicleId: discountFormData.targetType === "vehicle" ? Number(discountFormData.vehicleId) : null,
+        make: discountFormData.targetType === "company" ? discountFormData.make.trim() : null,
+      };
+
+      await createDiscount(payload);
+      toast.success("Discount added successfully");
+      setIsAddDiscountDialogOpen(false);
+      await fetchDiscounts();
+      if (!isPropDriven) {
+        await fetchAll();
+      }
+    } catch (err) {
+      const message = err.response?.data?.message || err.message || "Failed to create discount";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteDiscount = async (discountId) => {
+    setIsLoading(true);
+    setError("");
+    try {
+      await deleteDiscount(discountId);
+      toast.success("Discount deleted successfully");
+      await fetchDiscounts();
+      if (!isPropDriven) {
+        await fetchAll();
+      }
+    } catch (err) {
+      const message = err.response?.data?.message || err.message || "Failed to delete discount";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[#F8F5F0] py-12 px-6 font-sans">
       <div className="max-w-7xl mx-auto flex flex-col gap-10">
@@ -238,13 +358,58 @@ export default function Admin({ vehicles, onAdd, onEdit, onDelete, onRestock }) 
               Manage dealership inventory and stock levels
             </p>
           </div>
-          <Button
-            onClick={handleAddClick}
-            disabled={isLoading}
-            className="h-11 bg-[#285943] hover:bg-[#285943]/90 text-white font-semibold rounded-xl px-6 tracking-wide transition-all duration-200 shadow-md shadow-[#285943]/10"
+          {activeTab === "vehicles" ? (
+            <Button
+              onClick={handleAddClick}
+              disabled={isLoading}
+              className="h-11 bg-[#285943] hover:bg-[#285943]/90 text-white font-semibold rounded-xl px-6 tracking-wide transition-all duration-200 shadow-md shadow-[#285943]/10"
+            >
+              Add Vehicle
+            </Button>
+          ) : (
+            <Button
+              onClick={() => {
+                setDiscountFormData({
+                  targetType: "vehicle",
+                  vehicleId: "",
+                  make: "",
+                  discountRate: "",
+                  startDate: "",
+                  endDate: "",
+                });
+                setDiscountFormErrors({});
+                setIsAddDiscountDialogOpen(true);
+              }}
+              disabled={isLoading}
+              className="h-11 bg-[#285943] hover:bg-[#285943]/90 text-white font-semibold rounded-xl px-6 tracking-wide transition-all duration-200 shadow-md shadow-[#285943]/10"
+            >
+              Add Discount
+            </Button>
+          )}
+        </div>
+
+        {/* Navigation Tabs */}
+        <div className="flex border-b border-[#E9E4DA] gap-6 text-sm font-semibold select-none">
+          <button
+            onClick={() => setActiveTab("vehicles")}
+            className={`pb-3 transition-colors ${
+              activeTab === "vehicles"
+                ? "border-b-2 border-[#285943] text-[#285943]"
+                : "text-[#5B6A60] hover:text-[#285943]"
+            }`}
           >
-            Add Vehicle
-          </Button>
+            Inventory
+          </button>
+          <button
+            onClick={() => setActiveTab("discounts")}
+            className={`pb-3 transition-colors ${
+              activeTab === "discounts"
+                ? "border-b-2 border-[#285943] text-[#285943]"
+                : "text-[#5B6A60] hover:text-[#285943]"
+            }`}
+          >
+            Discounts
+          </button>
         </div>
 
         {error && (
@@ -253,84 +418,173 @@ export default function Admin({ vehicles, onAdd, onEdit, onDelete, onRestock }) 
           </div>
         )}
 
-        {/* Vehicle Table Container */}
-        <Card className="bg-white border border-[#E9E4DA] rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden p-6">
-          {isLoading && vehiclesList.length === 0 ? (
-            <div className="flex justify-center items-center py-20">
-              <div className="w-10 h-10 border-4 border-[#285943] border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          ) : vehiclesList.length === 0 ? (
-            <div className="w-full py-16 text-center">
-              <p className="text-lg font-medium text-[#5B6A60]">
-                No vehicles available
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto w-full">
-              <table role="table" className="w-full border-collapse text-left text-sm">
-                <thead>
-                  <tr role="row" className="border-b border-[#E9E4DA]">
-                    <th role="columnheader" className="py-4 px-4 font-semibold text-[#5B6A60] uppercase tracking-wider text-xs">Make</th>
-                    <th role="columnheader" className="py-4 px-4 font-semibold text-[#5B6A60] uppercase tracking-wider text-xs">Model</th>
-                    <th role="columnheader" className="py-4 px-4 font-semibold text-[#5B6A60] uppercase tracking-wider text-xs">Category</th>
-                    <th role="columnheader" className="py-4 px-4 font-semibold text-[#5B6A60] uppercase tracking-wider text-xs">Price</th>
-                    <th role="columnheader" className="py-4 px-4 font-semibold text-[#5B6A60] uppercase tracking-wider text-xs">Quantity</th>
-                    <th role="columnheader" className="py-4 px-4 font-semibold text-[#5B6A60] uppercase tracking-wider text-xs text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E9E4DA]">
-                  {vehiclesList.map((vehicle) => (
-                    <tr role="row" key={vehicle.id} className="hover:bg-[#F8F5F0]/50 transition-colors">
-                      <td className="py-4 px-4 font-medium text-[#1D2D24]">{vehicle.make}</td>
-                      <td className="py-4 px-4 text-[#5B6A60]">{vehicle.model}</td>
-                      <td className="py-4 px-4">
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#285943]/10 text-[#285943]">
-                          {vehicle.category}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4 font-semibold text-[#1D2D24]">
-                        ${vehicle.price.toLocaleString("en-US")}
-                      </td>
-                      <td className="py-4 px-4">
-                        <span className={`font-semibold ${vehicle.quantity > 0 ? "text-emerald-600" : "text-red-500"}`}>
-                          {vehicle.quantity}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4 text-right">
-                        <div className="flex gap-2 justify-end">
-                          <Button
-                            onClick={() => handleRestockClick(vehicle.id)}
-                            disabled={isLoading}
-                            variant="outline"
-                            className="h-8 text-xs font-medium border-[#E9E4DA] text-[#5B6A60] hover:bg-[#F8F5F0]"
-                          >
-                            Restock
-                          </Button>
-                          <Button
-                            onClick={() => handleEditClick(vehicle)}
-                            disabled={isLoading}
-                            variant="outline"
-                            className="h-8 text-xs font-medium border-[#E9E4DA] text-[#5B6A60] hover:bg-[#F8F5F0]"
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            onClick={() => handleDeleteClick(vehicle.id)}
-                            disabled={isLoading}
-                            variant="destructive"
-                            className="h-8 text-xs font-medium bg-red-50 hover:bg-red-100 text-red-600 border border-red-200"
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </td>
+        {/* Conditional Tab Rendering */}
+        {activeTab === "vehicles" ? (
+          /* Vehicle Table Container */
+          <Card className="bg-white border border-[#E9E4DA] rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden p-6">
+            {isLoading && vehiclesList.length === 0 ? (
+              <div className="flex justify-center items-center py-20">
+                <div className="w-10 h-10 border-4 border-[#285943] border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : vehiclesList.length === 0 ? (
+              <div className="w-full py-16 text-center">
+                <p className="text-lg font-medium text-[#5B6A60]">
+                  No vehicles available
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto w-full">
+                <table role="table" className="w-full border-collapse text-left text-sm">
+                  <thead>
+                    <tr role="row" className="border-b border-[#E9E4DA]">
+                      <th role="columnheader" className="py-4 px-4 font-semibold text-[#5B6A60] uppercase tracking-wider text-xs">Make</th>
+                      <th role="columnheader" className="py-4 px-4 font-semibold text-[#5B6A60] uppercase tracking-wider text-xs">Model</th>
+                      <th role="columnheader" className="py-4 px-4 font-semibold text-[#5B6A60] uppercase tracking-wider text-xs">Category</th>
+                      <th role="columnheader" className="py-4 px-4 font-semibold text-[#5B6A60] uppercase tracking-wider text-xs">Price</th>
+                      <th role="columnheader" className="py-4 px-4 font-semibold text-[#5B6A60] uppercase tracking-wider text-xs">Quantity</th>
+                      <th role="columnheader" className="py-4 px-4 font-semibold text-[#5B6A60] uppercase tracking-wider text-xs text-right">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
+                  </thead>
+                  <tbody className="divide-y divide-[#E9E4DA]">
+                    {vehiclesList.map((vehicle) => (
+                      <tr role="row" key={vehicle.id} className="hover:bg-[#F8F5F0]/50 transition-colors">
+                        <td className="py-4 px-4 font-medium text-[#1D2D24]">{vehicle.make}</td>
+                        <td className="py-4 px-4 text-[#5B6A60]">{vehicle.model}</td>
+                        <td className="py-4 px-4">
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#285943]/10 text-[#285943]">
+                            {vehicle.category}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4 font-semibold text-[#1D2D24]">
+                          {vehicle.activeDiscountRate > 0 ? (
+                            <div className="flex flex-col text-left">
+                              <span className="line-through text-red-500 text-xs">${vehicle.price.toLocaleString("en-US")}</span>
+                              <span>${vehicle.discountedPrice.toLocaleString("en-US")}</span>
+                            </div>
+                          ) : (
+                            `$${vehicle.price.toLocaleString("en-US")}`
+                          )}
+                        </td>
+                        <td className="py-4 px-4">
+                          <span className={`font-semibold ${vehicle.quantity > 0 ? "text-emerald-600" : "text-red-500"}`}>
+                            {vehicle.quantity}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4 text-right">
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              onClick={() => handleRestockClick(vehicle.id)}
+                              disabled={isLoading}
+                              variant="outline"
+                              className="h-8 text-xs font-medium border-[#E9E4DA] text-[#5B6A60] hover:bg-[#F8F5F0]"
+                            >
+                              Restock
+                            </Button>
+                            <Button
+                              onClick={() => handleEditClick(vehicle)}
+                              disabled={isLoading}
+                              variant="outline"
+                              className="h-8 text-xs font-medium border-[#E9E4DA] text-[#5B6A60] hover:bg-[#F8F5F0]"
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              onClick={() => handleDeleteClick(vehicle.id)}
+                              disabled={isLoading}
+                              variant="destructive"
+                              className="h-8 text-xs font-medium bg-red-50 hover:bg-red-100 text-red-600 border border-red-200"
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+        ) : (
+          /* Discount Table Container */
+          <Card className="bg-white border border-[#E9E4DA] rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden p-6">
+            {isLoading && discountsList.length === 0 ? (
+              <div className="flex justify-center items-center py-20">
+                <div className="w-10 h-10 border-4 border-[#285943] border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : discountsList.length === 0 ? (
+              <div className="w-full py-16 text-center">
+                <p className="text-lg font-medium text-[#5B6A60]">
+                  No active or scheduled discounts
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto w-full">
+                <table role="table" className="w-full border-collapse text-left text-sm">
+                  <thead>
+                    <tr role="row" className="border-b border-[#E9E4DA]">
+                      <th role="columnheader" className="py-4 px-4 font-semibold text-[#5B6A60] uppercase tracking-wider text-xs">Target</th>
+                      <th role="columnheader" className="py-4 px-4 font-semibold text-[#5B6A60] uppercase tracking-wider text-xs">Discount Rate</th>
+                      <th role="columnheader" className="py-4 px-4 font-semibold text-[#5B6A60] uppercase tracking-wider text-xs">Start Date</th>
+                      <th role="columnheader" className="py-4 px-4 font-semibold text-[#5B6A60] uppercase tracking-wider text-xs">End Date</th>
+                      <th role="columnheader" className="py-4 px-4 font-semibold text-[#5B6A60] uppercase tracking-wider text-xs">Status</th>
+                      <th role="columnheader" className="py-4 px-4 font-semibold text-[#5B6A60] uppercase tracking-wider text-xs text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E9E4DA]">
+                    {discountsList.map((discount) => {
+                      const now = new Date();
+                      const start = new Date(discount.startDate);
+                      const end = new Date(discount.endDate);
+                      let statusText = "Active";
+                      let statusStyle = "bg-emerald-100 text-emerald-700";
+
+                      if (now < start) {
+                        statusText = "Scheduled";
+                        statusStyle = "bg-blue-100 text-blue-700";
+                      } else if (now > end) {
+                        statusText = "Expired";
+                        statusStyle = "bg-gray-100 text-gray-700";
+                      }
+
+                      let targetLabel = "";
+                      if (discount.vehicleId) {
+                        const v = vehiclesList.find((x) => x.id === discount.vehicleId);
+                        targetLabel = v ? `Vehicle: ${v.make} ${v.model} ($${v.price})` : `Vehicle ID: ${discount.vehicleId}`;
+                      } else {
+                        targetLabel = `Make/Company: ${discount.make}`;
+                      }
+
+                      return (
+                        <tr role="row" key={discount.id} className="hover:bg-[#F8F5F0]/50 transition-colors">
+                          <td className="py-4 px-4 font-medium text-[#1D2D24]">{targetLabel}</td>
+                          <td className="py-4 px-4 text-[#1D2D24] font-semibold">{discount.discountRate}% OFF</td>
+                          <td className="py-4 px-4 text-[#5B6A60]">{start.toLocaleString()}</td>
+                          <td className="py-4 px-4 text-[#5B6A60]">{end.toLocaleString()}</td>
+                          <td className="py-4 px-4">
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusStyle}`}>
+                              {statusText}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4 text-right">
+                            <Button
+                              onClick={() => handleDeleteDiscount(discount.id)}
+                              disabled={isLoading}
+                              variant="destructive"
+                              className="h-8 text-xs font-medium bg-red-50 hover:bg-red-100 text-red-600 border border-red-200"
+                            >
+                              Delete
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+        )}
 
       </div>
 
@@ -507,6 +761,141 @@ export default function Admin({ vehicles, onAdd, onEdit, onDelete, onRestock }) 
               Delete
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Discount Dialog */}
+      <Dialog open={isAddDiscountDialogOpen}>
+        <DialogContent onClose={() => setIsAddDiscountDialogOpen(false)}>
+          <DialogHeader>
+            <DialogTitle>Add Discount</DialogTitle>
+            <DialogDescription>
+              Set up a dynamic or time-bound discount rate for specific vehicles or car companies.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleDiscountSubmit} className="flex flex-col gap-4 text-left">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider text-[#5B6A60]">Target Type</label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 text-sm font-medium text-[#1D2D24] cursor-pointer">
+                  <input
+                    type="radio"
+                    name="targetType"
+                    value="vehicle"
+                    checked={discountFormData.targetType === "vehicle"}
+                    onChange={handleDiscountInputChange}
+                    className="accent-[#285943]"
+                  />
+                  Specific Vehicle
+                </label>
+                <label className="flex items-center gap-2 text-sm font-medium text-[#1D2D24] cursor-pointer">
+                  <input
+                    type="radio"
+                    name="targetType"
+                    value="company"
+                    checked={discountFormData.targetType === "company"}
+                    onChange={handleDiscountInputChange}
+                    className="accent-[#285943]"
+                  />
+                  Company / Make
+                </label>
+              </div>
+            </div>
+
+            {discountFormData.targetType === "vehicle" ? (
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="discount-vehicleId" className="text-xs font-semibold uppercase tracking-wider text-[#5B6A60]">Select Vehicle</label>
+                <select
+                  id="discount-vehicleId"
+                  name="vehicleId"
+                  value={discountFormData.vehicleId}
+                  onChange={handleDiscountInputChange}
+                  className="h-11 px-3 rounded-xl border border-[#E9E4DA] bg-white text-[#1D2D24] text-sm focus-visible:border-[#285943]"
+                >
+                  <option value="">-- Choose a Vehicle --</option>
+                  {vehiclesList.map(v => (
+                    <option key={v.id} value={v.id}>
+                      {v.make} {v.model} (${v.price.toLocaleString()})
+                    </option>
+                  ))}
+                </select>
+                {discountFormErrors.vehicleId && <span className="text-xs text-red-500">{discountFormErrors.vehicleId}</span>}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="discount-make" className="text-xs font-semibold uppercase tracking-wider text-[#5B6A60]">Make / Company Name</label>
+                <Input
+                  id="discount-make"
+                  name="make"
+                  placeholder="e.g. Tesla"
+                  value={discountFormData.make}
+                  onChange={handleDiscountInputChange}
+                  className="h-11 rounded-xl border-[#E9E4DA]"
+                />
+                {discountFormErrors.make && <span className="text-xs text-red-500">{discountFormErrors.make}</span>}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="discount-rate" className="text-xs font-semibold uppercase tracking-wider text-[#5B6A60]">Discount Rate (%)</label>
+              <Input
+                id="discount-rate"
+                name="discountRate"
+                type="number"
+                step="0.1"
+                placeholder="e.g. 15"
+                value={discountFormData.discountRate}
+                onChange={handleDiscountInputChange}
+                className="h-11 rounded-xl border-[#E9E4DA]"
+              />
+              {discountFormErrors.discountRate && <span className="text-xs text-red-500">{discountFormErrors.discountRate}</span>}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="discount-startDate" className="text-xs font-semibold uppercase tracking-wider text-[#5B6A60]">Start Date & Time</label>
+              <Input
+                id="discount-startDate"
+                name="startDate"
+                type="datetime-local"
+                value={discountFormData.startDate}
+                onChange={handleDiscountInputChange}
+                className="h-11 rounded-xl border-[#E9E4DA] text-sm"
+              />
+              {discountFormErrors.startDate && <span className="text-xs text-red-500">{discountFormErrors.startDate}</span>}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="discount-endDate" className="text-xs font-semibold uppercase tracking-wider text-[#5B6A60]">End Date & Time</label>
+              <Input
+                id="discount-endDate"
+                name="endDate"
+                type="datetime-local"
+                value={discountFormData.endDate}
+                onChange={handleDiscountInputChange}
+                className="h-11 rounded-xl border-[#E9E4DA] text-sm"
+              />
+              {discountFormErrors.endDate && <span className="text-xs text-red-500">{discountFormErrors.endDate}</span>}
+            </div>
+
+            <div className="flex gap-3 justify-end mt-4">
+              <Button
+                type="button"
+                onClick={() => setIsAddDiscountDialogOpen(false)}
+                variant="outline"
+                className="h-11 border-[#E9E4DA] text-[#5B6A60]"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="h-11 bg-[#285943] hover:bg-[#285943]/90 text-white font-semibold"
+              >
+                Add Discount
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </main>

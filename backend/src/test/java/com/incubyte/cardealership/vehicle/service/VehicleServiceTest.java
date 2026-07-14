@@ -14,13 +14,17 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.incubyte.cardealership.discount.service.DiscountService;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,6 +32,9 @@ class VehicleServiceTest {
 
     @Mock
     private VehicleRepository vehicleRepository;
+
+    @Mock
+    private DiscountService discountService;
 
     @InjectMocks
     private VehicleService vehicleService;
@@ -553,6 +560,44 @@ class VehicleServiceTest {
         );
 
         verify(vehicleRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldReturnVehiclesWithActiveDiscountsInGetAll() {
+        Vehicle vehicle = createVehicle();
+
+        when(vehicleRepository.findAll()).thenReturn(List.of(vehicle));
+        when(discountService.getActiveDiscountRate(eq(1L), eq("Toyota"), any(LocalDateTime.class)))
+                .thenReturn(10.0);
+
+        List<VehicleResponse> response = vehicleService.getAllVehicles();
+
+        assertEquals(1, response.size());
+        VehicleResponse first = response.getFirst();
+        assertEquals(BigDecimal.valueOf(25000), first.price());
+        assertEquals(BigDecimal.valueOf(22500).setScale(2, RoundingMode.HALF_UP), first.discountedPrice());
+        assertEquals(10.0, first.activeDiscountRate());
+    }
+
+    @Test
+    void shouldReturnVehiclesWithActiveDiscountsInSearch() {
+        VehicleSearchRequest request = new VehicleSearchRequest(
+                "Toyota", null, null, null, null
+        );
+        Vehicle vehicle = createVehicle();
+
+        when(vehicleRepository.searchVehicles("Toyota", null, null, null, null))
+                .thenReturn(List.of(vehicle));
+        when(discountService.getActiveDiscountRate(eq(1L), eq("Toyota"), any(LocalDateTime.class)))
+                .thenReturn(15.0);
+
+        List<VehicleResponse> response = vehicleService.searchVehicles(request);
+
+        assertEquals(1, response.size());
+        VehicleResponse first = response.getFirst();
+        assertEquals(BigDecimal.valueOf(25000), first.price());
+        assertEquals(BigDecimal.valueOf(21250).setScale(2, RoundingMode.HALF_UP), first.discountedPrice());
+        assertEquals(15.0, first.activeDiscountRate());
     }
 
     private Vehicle createVehicle() {

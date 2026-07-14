@@ -26,7 +26,15 @@ export default function PurchaseDialog({ isOpen, vehicle, onConfirm, onCancel })
           <div className="flex justify-between text-sm">
             <span className="text-[#5B6A60]">Price</span>
             <span className="font-semibold text-[#1D2D24]">
-              ${vehicle?.price?.toLocaleString("en-US")}
+              {vehicle?.activeDiscountRate > 0 ? (
+                <>
+                  <span className="line-through text-red-500 mr-2">${vehicle?.price?.toLocaleString("en-US")}</span>
+                  <span className="text-[#285943]">${vehicle?.discountedPrice?.toLocaleString("en-US")}</span>
+                  <span className="ml-1.5 px-1.5 py-0.5 rounded bg-red-100 text-red-600 text-[10px] font-bold">{vehicle?.activeDiscountRate}% OFF</span>
+                </>
+              ) : (
+                `$${vehicle?.price?.toLocaleString("en-US")}`
+              )}
             </span>
           </div>
         </div>

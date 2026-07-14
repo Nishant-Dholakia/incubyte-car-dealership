@@ -9,8 +9,11 @@ import com.incubyte.cardealership.vehicle.entity.Vehicle;
 import com.incubyte.cardealership.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.incubyte.cardealership.discount.service.DiscountService;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,6 +23,7 @@ import java.util.Optional;
 public class VehicleService {
 
     private final VehicleRepository vehicleRepository;
+    private final DiscountService discountService;
 
     public VehicleResponse addVehicle(VehicleRequest request) {
         validate(request);
@@ -34,14 +38,7 @@ public class VehicleService {
 
         vehicleRepository.save(vehicle);
 
-        return new VehicleResponse(
-                vehicle.getId(),
-                vehicle.getMake(),
-                vehicle.getModel(),
-                vehicle.getCategory(),
-                vehicle.getPrice(),
-                vehicle.getQuantity()
-        );
+        return toVehicleResponse(vehicle);
     }
 
     private void validate(VehicleRequest request) {
@@ -75,14 +72,7 @@ public class VehicleService {
     public List<VehicleResponse> getAllVehicles() {
         return vehicleRepository.findAll()
                 .stream()
-                .map(vehicle -> new VehicleResponse(
-                        vehicle.getId(),
-                        vehicle.getMake(),
-                        vehicle.getModel(),
-                        vehicle.getCategory(),
-                        vehicle.getPrice(),
-                        vehicle.getQuantity()
-                ))
+                .map(this::toVehicleResponse)
                 .toList();
     }
 
@@ -100,12 +90,22 @@ public class VehicleService {
     }
 
     private VehicleResponse toVehicleResponse(Vehicle vehicle) {
+        Double discountRate = discountService.getActiveDiscountRate(vehicle.getId(), vehicle.getMake(), LocalDateTime.now());
+        BigDecimal discountedPrice = vehicle.getPrice();
+        if (discountRate > 0) {
+            BigDecimal discountAmount = vehicle.getPrice()
+                    .multiply(BigDecimal.valueOf(discountRate))
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            discountedPrice = vehicle.getPrice().subtract(discountAmount);
+        }
         return new VehicleResponse(
                 vehicle.getId(),
                 vehicle.getMake(),
                 vehicle.getModel(),
                 vehicle.getCategory(),
                 vehicle.getPrice(),
+                discountedPrice,
+                discountRate,
                 vehicle.getQuantity()
         );
     }
@@ -122,14 +122,7 @@ public class VehicleService {
 
         Vehicle updatedVehicle = vehicleRepository.save(vehicle);
 
-        return new VehicleResponse(
-                updatedVehicle.getId(),
-                updatedVehicle.getMake(),
-                updatedVehicle.getModel(),
-                updatedVehicle.getCategory(),
-                updatedVehicle.getPrice(),
-                updatedVehicle.getQuantity()
-        );
+        return toVehicleResponse(updatedVehicle);
     }
 
 
@@ -141,14 +134,7 @@ public class VehicleService {
 
         Vehicle updatedVehicle = vehicleRepository.save(vehicle);
 
-        return new VehicleResponse(
-                updatedVehicle.getId(),
-                updatedVehicle.getMake(),
-                updatedVehicle.getModel(),
-                updatedVehicle.getCategory(),
-                updatedVehicle.getPrice(),
-                updatedVehicle.getQuantity()
-        );
+        return toVehicleResponse(updatedVehicle);
     }
 
     public void deleteVehicle(Long id) {
@@ -172,14 +158,7 @@ public class VehicleService {
 
         Vehicle updatedVehicle = vehicleRepository.save(vehicle);
 
-        return new VehicleResponse(
-                updatedVehicle.getId(),
-                updatedVehicle.getMake(),
-                updatedVehicle.getModel(),
-                updatedVehicle.getCategory(),
-                updatedVehicle.getPrice(),
-                updatedVehicle.getQuantity()
-        );
+        return toVehicleResponse(updatedVehicle);
     }
 
     private void validateVehicleRequest(VehicleRequest request) {
